@@ -1,0 +1,74 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    name: test (java ${{ matrix.java }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        java: [21, 25, 27]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: |
+            ${{ matrix.java }}
+            25
+      - name: Use the installed JDKs
+        run: |
+          mkdir -p ~/.gradle
+          echo "org.gradle.java.installations.fromEnv=JAVA_HOME_${{ matrix.java }}_X64,JAVA_HOME_25_X64" >> ~/.gradle/gradle.properties
+          echo "org.gradle.java.installations.auto-download=false" >> ~/.gradle/gradle.properties
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - run: ./gradlew test -PtestJava=${{ matrix.java }}
+
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: |
+            21
+            25
+      - name: Use the installed JDKs
+        run: |
+          mkdir -p ~/.gradle
+          echo "org.gradle.java.installations.fromEnv=JAVA_HOME_21_X64,JAVA_HOME_25_X64" >> ~/.gradle/gradle.properties
+          echo "org.gradle.java.installations.auto-download=false" >> ~/.gradle/gradle.properties
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - run: ./gradlew publishAllPublicationsToStagingRepository
+      - name: Check the published jars
+        run: |
+          check() {
+            unzip -l "$1" | grep -q META-INF/LICENSE
+            javap -v -cp "$1" "$2" | grep -q "major version: 65"
+          }
+          check build/staging-repo/com/synthient/synthient-java/*/synthient-java-*[0-9].jar com.synthient.SynthientClient
+          check build/staging-repo/com/synthient/synthient-java-grpcschema/*/synthient-java-grpcschema-*[0-9].jar com.synthient.grpcschema.GrpcSchema
+      - name: Run a Gradle consumer of the staged artifacts
+        run: ./gradlew -p consumer-test run
+      - name: Run a Maven consumer of the staged artifacts
+        run: mvn -B -q -f consumer-test/pom.xml compile exec:java
