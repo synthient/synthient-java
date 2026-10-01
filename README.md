@@ -31,38 +31,47 @@ Requires Java 21 or later.
 ## Usage
 
 ```java
-SynthientClient client = new SynthientClient(); // reads SYNTHIENT_API_KEY
-
-IpInfo info = client.lookupIp("8.8.8.8");
-if (info.intelligence() != null) {
-    System.out.println(info.intelligence().riskScore() + " " + info.intelligence().categories());
+try (SynthientClient client = new SynthientClient()) { // reads SYNTHIENT_API_KEY
+    IpInfo info = client.lookupIp("8.8.8.8");
+    Intelligence intelligence = info.intelligence();
+    if (intelligence != null) {
+        System.out.println(intelligence.riskScore() + " " + intelligence.categories());
+    }
 }
 ```
+
+A client is safe for concurrent use and holds a connection pool, so create one, reuse it across your application, and close it on shutdown.
 
 Look up many addresses in one request:
 
 ```java
 List<IpInfo> results = client.lookupIps(List.of("8.8.8.8", "1.1.1.1"));
 for (IpInfo result : results) {
-    if (result.intelligence() != null) {
-        System.out.println(result.ip() + " " + result.intelligence().riskScore());
+    Intelligence intelligence = result.intelligence();
+    if (intelligence != null) {
+        System.out.println(result.ip() + " " + intelligence.riskScore());
     }
 }
 ```
 
-Consume a real-time feed:
+Consume a real-time feed. Streaming needs an API key with the `PROXY_FIREHOSE` scope. The server ends each stream after about 30 minutes and iteration then stops without an error, so reconnect in a loop:
 
 ```java
-try (EventStream<ProxyEvent> events = client.proxies().stream()) {
-    for (ProxyEvent event : events) {
-        System.out.println(event.ip() + " " + event.provider());
+while (true) {
+    try (EventStream<ProxyEvent> events = client.proxies().stream()) {
+        for (ProxyEvent event : events) {
+            System.out.println(event.ip() + " " + event.provider());
+        }
+    } catch (SynthientException e) {
+        System.err.println("stream: " + e);
     }
+    Thread.sleep(2000);
 }
 ```
 
 ## Documentation
 
-Every public class and method is documented in its [Javadoc](https://javadoc.io/doc/com.synthient/synthient-java), including errors, retries, exports, and downloads. Runnable programs are in [examples](examples/src/main/java/com/synthient/examples), for example `./gradlew -q :examples:lookupIp --args=8.8.8.8`. Guides and field references are at [docs.synthient.com](https://docs.synthient.com). The `com.synthient:synthient-java-grpcschema` artifact fetches the protobuf schema of the Synthient gRPC API.
+The [Javadoc](https://javadoc.io/doc/com.synthient/synthient-java) is the API reference, including errors, retries, exports, and downloads. Runnable programs are in [examples](examples/src/main/java/com/synthient/examples), for example `./gradlew -q :examples:lookupIp --args=8.8.8.8`. Guides and field references are at [docs.synthient.com](https://docs.synthient.com). The `com.synthient:synthient-java-grpcschema` artifact fetches the protobuf schema of the Synthient gRPC API.
 
 ## License
 
