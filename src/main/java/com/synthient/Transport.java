@@ -197,7 +197,7 @@ final class Transport {
             if (retryAfter != null && retryAfter.compareTo(MAX_RETRY_AFTER) > 0) {
                 return response;
             }
-            discard(response.body());
+            closeQuietly(response.body());
             Duration delay = backoff(attempt);
             sleep(retryAfter != null && retryAfter.compareTo(delay) > 0 ? retryAfter : delay);
         }
@@ -416,15 +416,6 @@ final class Transport {
             return until.isNegative() ? Duration.ZERO : until;
         } catch (DateTimeParseException e) {
             return null;
-        }
-    }
-
-    /** Reads and closes a short unread body, so that its HTTP/1.1 connection can be reused. */
-    static void discard(InputStream body) {
-        try (body) {
-            body.skip(MAX_ERROR_SIZE);
-        } catch (IOException ignored) {
-            // The connection is dropped instead of reused; there is nothing to recover.
         }
     }
 

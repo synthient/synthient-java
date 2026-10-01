@@ -121,37 +121,48 @@ public final class GrpcSchema {
      * Converts an endpoint to {@code host:port} form. It accepts {@code host:port}, a bare host (port 443 is
      * assumed), and {@code grpc://} or {@code https://} URLs. A blank endpoint means {@link #DEFAULT_ENDPOINT}.
      *
-     * @throws IllegalArgumentException if the endpoint has no host
+     * @throws IllegalArgumentException if the endpoint has an invalid host, port, or scheme, or includes
+     *     user info, a path other than {@code /}, a query, or a fragment
      */
     public static Endpoint normalizeEndpoint(String raw) {
         String value = raw.strip();
         if (value.isEmpty()) {
             value = DEFAULT_ENDPOINT;
         }
-        if (value.contains("://")) {
-            try {
-                String authority = new URI(value).getRawAuthority();
-                value = authority == null ? "" : authority;
-            } catch (URISyntaxException e) {
-                throw new IllegalArgumentException("invalid endpoint \"" + raw + "\"", e);
+        if (!value.contains("://")) {
+            if (!value.startsWith("[") && value.indexOf(':') != value.lastIndexOf(':')) {
+                value = "[" + value + "]";
             }
+            value = "grpc://" + value;
         }
-        if (value.endsWith("/")) {
-            value = value.substring(0, value.length() - 1);
+        URI uri;
+        try {
+            uri = new URI(value).parseServerAuthority();
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("invalid endpoint \"" + raw + "\"", e);
         }
-        if (value.isEmpty()) {
-            throw new IllegalArgumentException("empty endpoint \"" + raw + "\"");
+        String host = uri.getHost();
+        String path = uri.getRawPath();
+        int port = uri.getPort();
+        if (host == null
+                || !("grpc".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))
+                || uri.getRawUserInfo() != null
+                || uri.getRawQuery() != null
+                || uri.getRawFragment() != null
+                || (path != null && !path.isEmpty() && !path.equals("/"))
+                || uri.getRawAuthority().endsWith(":")
+                || port == 0
+                || port > 65535) {
+            throw new IllegalArgumentException("invalid endpoint \"" + raw + "\"");
         }
-        int close = value.indexOf(']');
-        if (value.startsWith("[") && close > 0 && value.startsWith(":", close + 1)) {
-            return new Endpoint(value, value.substring(1, close));
+        if (port == -1) {
+            port = 443;
         }
-        int colon = value.indexOf(':');
-        if (!value.startsWith("[") && colon >= 0 && colon == value.lastIndexOf(':')) {
-            return new Endpoint(value, value.substring(0, colon));
+        String address = host + ":" + port;
+        if (host.startsWith("[")) {
+            host = host.substring(1, host.length() - 1);
         }
-        String host = value.replaceAll("^\\[+|]+$", "");
-        return new Endpoint(host.contains(":") ? "[" + host + "]:443" : host + ":443", host);
+        return new Endpoint(address, host);
     }
 
     /** Returns an explanation of a common failure of {@link #fetch}, or an empty string if it has none. */

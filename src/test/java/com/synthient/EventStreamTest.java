@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
@@ -98,6 +99,16 @@ class EventStreamTest {
         EventStream<ProxyEvent> stream = new EventStream<>(chunked("", 1), ProxyEvent.class);
         assertFalse(stream.iterator().hasNext());
         assertThrows(IllegalStateException.class, stream::iterator);
+    }
+
+    @Test
+    void closingDiscardsAPrefetchedEvent() {
+        EventStream<ProxyEvent> stream = new EventStream<>(chunked("{\"ip\":\"10.0.0.1\"}\n", 64), ProxyEvent.class);
+        Iterator<ProxyEvent> events = stream.iterator();
+        assertTrue(events.hasNext());
+        stream.close();
+        assertFalse(events.hasNext());
+        assertThrows(NoSuchElementException.class, events::next);
     }
 
     @Test

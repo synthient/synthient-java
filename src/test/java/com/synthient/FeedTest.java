@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -246,6 +247,28 @@ class FeedTest {
             ApiException error = assertThrows(ApiException.class, iterator::hasNext);
             assertEquals(403, error.statusCode());
             assertFalse(server.requests.isEmpty());
+        }
+    }
+
+    @Test
+    void canRetryAFailedPageWithoutRepeatingEarlierExports() throws Exception {
+        AtomicInteger attempts = new AtomicInteger();
+        try (TestServer server = new TestServer(exchange -> {
+                    if (exchange.getRequestURI().getRawQuery() == null) {
+                        TestServer.json(exchange, 200, page("c1", "a"));
+                    } else if (attempts.getAndIncrement() == 0) {
+                        TestServer.json(exchange, 503, "{}");
+                    } else {
+                        TestServer.json(exchange, 200, page(null, "b"));
+                    }
+                });
+                SynthientClient client = server.clientBuilder().maxRetries(0).build()) {
+            Iterator<Export> iterator = client.proxies().allExports().iterator();
+            assertEquals("a", iterator.next().id().value());
+            assertThrows(ApiException.class, iterator::hasNext);
+            assertEquals("b", iterator.next().id().value());
+            assertFalse(iterator.hasNext());
+            assertEquals(3, server.requests.size());
         }
     }
 }

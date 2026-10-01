@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class GrpcSchemaTest {
     private static final Metadata.Key<String> API_KEY = Metadata.Key.of("x-api-key", Metadata.ASCII_STRING_MARSHALLER);
@@ -163,9 +164,26 @@ class GrpcSchemaTest {
         assertEquals(new Endpoint(address, host), GrpcSchema.normalizeEndpoint(raw));
     }
 
-    @Test
-    void rejectsEmptyEndpoints() {
-        assertThrows(IllegalArgumentException.class, () -> GrpcSchema.normalizeEndpoint("grpc://"));
+    @ParameterizedTest
+    @ValueSource(
+            strings = {
+                "grpc://",
+                ":443",
+                "localhost:0",
+                "localhost:65536",
+                "localhost:abc",
+                "localhost:",
+                "grpc://user@localhost:443",
+                "https://localhost/service",
+                "ftp://localhost",
+                "localhost?query",
+                "localhost#fragment",
+                "[::1]:0",
+                "[::1]:abc",
+                "[::1"
+            })
+    void rejectsInvalidEndpoints(String endpoint) {
+        assertThrows(IllegalArgumentException.class, () -> GrpcSchema.normalizeEndpoint(endpoint));
     }
 
     @ParameterizedTest

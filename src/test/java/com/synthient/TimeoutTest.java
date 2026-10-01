@@ -16,7 +16,10 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class TimeoutTest {
     private static final Duration TIMEOUT = Duration.ofMillis(300);
@@ -144,6 +147,39 @@ class TimeoutTest {
             events.close();
             assertFalse(hasNext.get(5, TimeUnit.SECONDS));
             release.countDown();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {429, 503, 307})
+    void retriesAndRedirectsDoNotWaitForUnusedBodies(int status) throws Exception {
+        CountDownLatch release = new CountDownLatch(1);
+        AtomicInteger calls = new AtomicInteger();
+        try (TestServer server = new TestServer(exchange -> {
+                    if (calls.getAndIncrement() == 0) {
+                        exchange.getResponseHeaders().set("Retry-After", "0");
+                        exchange.getResponseHeaders().set("Location", "/storage/export.parquet");
+                        exchange.sendResponseHeaders(status, 100);
+                        exchange.getResponseBody().flush();
+                        await(release);
+                    } else {
+                        TestServer.json(exchange, 200, "{\"stream\":\"proxies\",\"feeds\":[]}");
+                    }
+                });
+                SynthientClient client = server.client()) {
+            try {
+                CompletableFuture<Void> result = CompletableFuture.runAsync(() -> {
+                    if (status == 307) {
+                        client.proxies().downloadUrl(ExportId.LATEST);
+                    } else {
+                        client.proxies().listExports();
+                    }
+                });
+                result.get(2, TimeUnit.SECONDS);
+                assertEquals(status == 307 ? 1 : 2, server.requests.size());
+            } finally {
+                release.countDown();
+            }
         }
     }
 

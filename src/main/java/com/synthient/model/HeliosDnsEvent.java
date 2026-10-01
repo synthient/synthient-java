@@ -2,6 +2,7 @@ package com.synthient.model;
 
 import static java.util.Objects.requireNonNull;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 
@@ -16,7 +17,10 @@ import java.time.Instant;
  * @param meta the proxy the tunnel came through
  */
 public record HeliosDnsEvent(
-        @JsonProperty(value = "timestamp", required = true) Instant timestamp,
+        @JsonProperty(value = "timestamp", required = true)
+        @JsonFormat(without = JsonFormat.Feature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS)
+        Instant timestamp,
+
         @JsonProperty(value = "tunnel_id", required = true) long tunnelId,
         @JsonProperty(value = "domain", required = true) String domain,
         @JsonProperty(value = "port", required = true) int port,

@@ -63,6 +63,10 @@ public final class EventStream<T> implements Iterable<T>, Closeable {
 
             @Override
             public boolean hasNext() {
+                if (closed) {
+                    next = null;
+                    return false;
+                }
                 if (next == null) {
                     next = readEvent();
                 }

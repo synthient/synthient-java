@@ -1,5 +1,6 @@
 package com.synthient.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 import org.jspecify.annotations.Nullable;
@@ -21,6 +22,10 @@ public record AnonymizerEvent(
         @JsonProperty("range_end") @Nullable String rangeEnd,
         @JsonProperty("provider") @Nullable String provider,
         @JsonProperty("type") @Nullable String type,
-        @JsonProperty("timestamp") @Nullable Instant timestamp,
+
+        @JsonProperty("timestamp")
+        @JsonFormat(without = JsonFormat.Feature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS)
+        @Nullable Instant timestamp,
+
         @JsonProperty("country_code") @Nullable String countryCode,
         @JsonProperty("asn") @Nullable Long asn) {}

@@ -62,8 +62,8 @@ public final class Feed<T> {
      * them. Each call to {@code iterator()} starts again from the first page, and stopping early fetches
      * nothing more.
      *
-     * <p>A failed page throws from {@code hasNext()}. A cursor the API already returned throws {@link
-     * SynthientException} rather than looping.
+     * <p>A failed page throws from {@code hasNext()} and can be retried by calling it again. A cursor the
+     * API already returned throws {@link SynthientException} rather than looping.
      */
     public Iterable<Export> allExports(ListExportsParams params) {
         return () -> new Iterator<>() {
@@ -78,10 +78,13 @@ public final class Feed<T> {
                     if (lastPage) {
                         return false;
                     }
-                    if (cursor != null && !seen.add(cursor)) {
+                    if (cursor != null && seen.contains(cursor)) {
                         throw new SynthientException("export listing returned a repeated cursor");
                     }
                     ExportPage result = listExports(params.limit(), cursor);
+                    if (cursor != null) {
+                        seen.add(cursor);
+                    }
                     page = result.exports().iterator();
                     cursor = result.nextCursor();
                     lastPage = cursor == null;
@@ -146,7 +149,7 @@ public final class Feed<T> {
         if (status >= 400) {
             throw transport.apiError(response);
         }
-        Transport.discard(response.body());
+        Transport.closeQuietly(response.body());
         if (status < 300) {
             throw new SynthientException("expected a redirect to the export, got status " + status);
         }
