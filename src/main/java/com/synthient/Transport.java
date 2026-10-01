@@ -11,6 +11,7 @@ import java.time.format.DateTimeParseException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
@@ -239,7 +240,9 @@ final class Transport {
         try {
             response = future.get();
         } catch (InterruptedException e) {
-            future.cancel(false);
+            if (!future.cancel(false) && future.state() == Future.State.SUCCESS) {
+                future.resultNow().close();
+            }
             call.cancel();
             Thread.currentThread().interrupt();
             throw new ApiConnectionException("interrupted while waiting for the response", e);
