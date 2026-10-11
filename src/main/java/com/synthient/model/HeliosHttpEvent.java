@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.math.BigInteger;
 import java.time.Instant;
 import org.jspecify.annotations.Nullable;
 
@@ -11,7 +12,7 @@ import org.jspecify.annotations.Nullable;
  * An HTTP request received by a Helios honeypot through a proxy.
  *
  * @param timestamp when the request was received
- * @param tunnelId the proxy tunnel
+ * @param tunnelId the proxy tunnel, an unsigned 64-bit value that can exceed {@code Long.MAX_VALUE}
  * @param domain the tunnel's destination domain
  * @param port the tunnel's destination port
  * @param protocol {@code http}
@@ -24,7 +25,7 @@ public record HeliosHttpEvent(
         @JsonFormat(without = JsonFormat.Feature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS)
         Instant timestamp,
 
-        @JsonProperty(value = "tunnel_id", required = true) long tunnelId,
+        @JsonProperty(value = "tunnel_id", required = true) BigInteger tunnelId,
         @JsonProperty(value = "domain", required = true) String domain,
         @JsonProperty(value = "port", required = true) int port,
         @JsonProperty(value = "protocol", required = true) String protocol,
@@ -34,6 +35,7 @@ public record HeliosHttpEvent(
 
     public HeliosHttpEvent {
         requireNonNull(timestamp, "timestamp");
+        requireNonNull(tunnelId, "tunnelId");
         requireNonNull(domain, "domain");
         requireNonNull(protocol, "protocol");
         requireNonNull(meta, "meta");

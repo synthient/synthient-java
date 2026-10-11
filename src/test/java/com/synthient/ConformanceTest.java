@@ -65,6 +65,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.RecordComponent;
 import java.lang.reflect.Type;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -237,6 +238,8 @@ class ConformanceTest {
                 switch (name) {
                     case "timestamp", "last_seen", "created_at", "date" -> Set.of(Instant.class);
                     case "resets_in" -> Set.of(Duration.class);
+                    // The spec says int64, but the live Helios streams send values above Long.MAX_VALUE.
+                    case "tunnel_id" -> Set.of(BigInteger.class);
                     default ->
                         format.equals("int64")
                                 ? Set.of(long.class, Long.class)

@@ -18,6 +18,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigInteger;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -124,27 +125,29 @@ class EventStreamTest {
                         HeliosHttpEvent.class)
                 .getFirst();
         assertEquals(Instant.ofEpochMilli(1780000000123L), http.timestamp());
-        assertEquals(9007199254740993L, http.tunnelId());
+        assertEquals(new BigInteger("9007199254740993"), http.tunnelId());
         assertEquals("GET / HTTP/1.1\r\n", new String(Base64.getDecoder().decode(http.raw()), UTF_8));
         assertNotNull(http.details());
         assertEquals("a.test", http.details().headers().get("Host"));
 
         HeliosHttpsEvent https = readAll(
                         chunked(
-                                "{\"timestamp\":1780000000123,\"tunnel_id\":1,\"domain\":\"a.test\",\"port\":443,"
+                                "{\"timestamp\":1780000000123,\"tunnel_id\":17257744507466107949,\"domain\":\"a.test\",\"port\":443,"
                                         + "\"protocol\":\"https\"," + meta + ",\"details\":null,\"raw\":null}\n",
                                 64),
                         HeliosHttpsEvent.class)
                 .getFirst();
+        assertEquals(new BigInteger("17257744507466107949"), https.tunnelId());
         assertNull(https.details());
 
         HeliosDnsEvent dns = readAll(
                         chunked(
-                                "{\"timestamp\":1780000000123,\"tunnel_id\":1,\"domain\":\"a.test\",\"port\":53,"
+                                "{\"timestamp\":1780000000123,\"tunnel_id\":18446744073709551615,\"domain\":\"a.test\",\"port\":53,"
                                         + "\"protocol\":\"dns\"," + meta + "}\n",
                                 64),
                         HeliosDnsEvent.class)
                 .getFirst();
+        assertEquals(new BigInteger("18446744073709551615"), dns.tunnelId());
         assertEquals("198.51.100.4", dns.meta().proxyIp());
 
         assertThrows(
