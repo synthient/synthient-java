@@ -38,7 +38,7 @@ class DownloadTest {
     void downloadsWithoutTheApiKey() throws Exception {
         try (TestServer server = server("/storage/proxies.parquet?X-Amz-Signature=" + SIGNATURE, PARQUET);
                 SynthientClient client = server.client();
-                InputStream file = client.proxies().download(ExportId.of("2026-05-03/07"))) {
+                InputStream file = client.proxies().download("2026-05-03/07")) {
             assertEquals("PAR1data", new String(file.readAllBytes(), UTF_8));
             TestServer.Request api = server.requests.get(0);
             TestServer.Request storage = server.requests.get(1);
@@ -146,7 +146,7 @@ class DownloadTest {
                 });
                 SynthientClient client = server.client()) {
             ApiException error =
-                    assertThrows(ApiException.class, () -> client.proxies().download(ExportId.of("2026-05-03")));
+                    assertThrows(ApiException.class, () -> client.proxies().download("2026-05-03"));
             assertEquals(404, error.statusCode());
             assertEquals(Duration.ofMinutes(1), error.retryAfter());
             assertEquals(1, server.requests.size());

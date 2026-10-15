@@ -230,7 +230,6 @@ class ConformanceTest {
         Set<Type> allowed = switch (schema.path("type").asString("")) {
             case "string" ->
                 switch (name) {
-                    case "id" -> Set.of(String.class, ExportId.class);
                     case "date" -> Set.of(LocalDate.class);
                     default -> format.equals("date-time") ? Set.of(Instant.class) : Set.of(String.class);
                 };
@@ -317,7 +316,7 @@ class ConformanceTest {
                     () -> client.lookupIps(List.of("1.1.1.1")),
                     () -> client.lookupDomain("example.com")));
             for (Feed<?> feed : TestServer.feeds(client)) {
-                ExportId hour = ExportId.hourly(LocalDate.of(2026, 5, 3), 7);
+                String hour = ExportId.hourly(LocalDate.of(2026, 5, 3), 7);
                 calls.add(feed::listExports);
                 calls.add(feed::stream);
                 calls.add(() -> feed.exportMeta(ExportId.LATEST));

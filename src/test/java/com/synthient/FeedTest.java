@@ -49,7 +49,7 @@ class FeedTest {
         "2024-02-29, 2024-02-29"
     })
     void normalizesValidIds(String id, String path) {
-        assertEquals(path, ExportId.of(id).toPath());
+        assertEquals(path, Feed.exportPath(id));
     }
 
     @ParameterizedTest
@@ -68,23 +68,16 @@ class FeedTest {
                 " 2026-05-03"
             })
     void rejectsInvalidIds(String id) {
-        assertThrows(IllegalArgumentException.class, () -> ExportId.of(id).toPath());
+        assertThrows(IllegalArgumentException.class, () -> Feed.exportPath(id));
     }
 
     @Test
     void buildsIds() {
-        assertEquals("2026-05-03", ExportId.daily(LocalDate.of(2026, 5, 3)).value());
-        assertEquals(
-                "2026-05-03/4", ExportId.hourly(LocalDate.of(2026, 5, 3), 4).value());
+        assertEquals("2026-05-03", ExportId.daily(LocalDate.of(2026, 5, 3)));
+        assertEquals("2026-05-03/4", ExportId.hourly(LocalDate.of(2026, 5, 3), 4));
         assertThrows(IllegalArgumentException.class, () -> ExportId.hourly(LocalDate.of(2026, 5, 3), 24));
         assertThrows(IllegalArgumentException.class, () -> ExportId.hourly(LocalDate.of(2026, 5, 3), -1));
-        assertEquals("latest", ExportId.LATEST.toString());
-    }
-
-    @Test
-    void idsAreJsonStrings() {
-        assertEquals("\"2026-05-03/7\"", Json.MAPPER.writeValueAsString(ExportId.of("2026-05-03/7")));
-        assertEquals(ExportId.LATEST, Json.MAPPER.readValue("\"latest\"", ExportId.class));
+        assertEquals("latest", ExportId.LATEST);
     }
 
     @Test
@@ -93,7 +86,7 @@ class FeedTest {
                 SynthientClient client = server.client()) {
             for (Feed<?> feed : TestServer.feeds(client)) {
                 assertThrows(ApiException.class, () -> feed.exportMeta(ExportId.LATEST));
-                assertThrows(ApiException.class, () -> feed.exportMeta(ExportId.of("2026-05-03/07")));
+                assertThrows(ApiException.class, () -> feed.exportMeta("2026-05-03/07"));
             }
             List<String> expected = new ArrayList<>();
             for (String feed : List.of(
@@ -116,7 +109,7 @@ class FeedTest {
     void invalidIdsSendNothing() throws Exception {
         try (TestServer server = new TestServer(exchange -> TestServer.json(exchange, 404, "{}"));
                 SynthientClient client = server.client()) {
-            ExportId invalid = ExportId.of("../account/me");
+            String invalid = "../account/me";
             assertThrows(IllegalArgumentException.class, () -> client.proxies().exportMeta(invalid));
             assertThrows(IllegalArgumentException.class, () -> client.proxies().downloadUrl(invalid));
             assertThrows(IllegalArgumentException.class, () -> client.proxies().download(invalid));
@@ -137,7 +130,7 @@ class FeedTest {
             assertEquals("cursor=c%201&limit=2", server.requests.getFirst().query());
             assertEquals("c2", page.nextCursor());
             Export export = page.exports().getFirst();
-            assertEquals(ExportId.of("2026-05-03/7"), export.id());
+            assertEquals("2026-05-03/7", export.id());
             assertEquals(ExportKind.DAILY, export.kind());
             assertEquals(LocalDate.of(2026, 5, 3), export.date());
             assertNull(export.hour());
@@ -182,7 +175,7 @@ class FeedTest {
             List<String> ids = new ArrayList<>();
             ListExportsParams params = ListExportsParams.builder().limit(2).build();
             for (Export export : client.proxies().allExports(params)) {
-                ids.add(export.id().value());
+                ids.add(export.id());
             }
             assertEquals(List.of("a", "b", "c"), ids);
             assertEquals(
@@ -200,9 +193,9 @@ class FeedTest {
             Iterator<Export> iterator = exports.iterator();
             assertTrue(iterator.hasNext());
             assertTrue(iterator.hasNext());
-            assertEquals("a", iterator.next().id().value());
+            assertEquals("a", iterator.next().id());
             assertEquals(1, server.requests.size());
-            assertEquals("a", exports.iterator().next().id().value());
+            assertEquals("a", exports.iterator().next().id());
             assertEquals(2, server.requests.size());
         }
     }
@@ -212,8 +205,8 @@ class FeedTest {
         try (TestServer server = pages(cursor -> page("c1", "x" + cursor));
                 SynthientClient client = server.client()) {
             Iterator<Export> iterator = client.proxies().allExports().iterator();
-            assertEquals("x", iterator.next().id().value());
-            assertEquals("xc1", iterator.next().id().value());
+            assertEquals("x", iterator.next().id());
+            assertEquals("xc1", iterator.next().id());
             SynthientException error = assertThrows(SynthientException.class, iterator::hasNext);
             assertEquals("export listing returned a repeated cursor", error.getMessage());
             assertEquals(2, server.requests.size());
@@ -227,7 +220,7 @@ class FeedTest {
             Iterator<Export> iterator = client.proxies()
                     .allExports(ListExportsParams.builder().cursor("start").build())
                     .iterator();
-            assertEquals("a", iterator.next().id().value());
+            assertEquals("a", iterator.next().id());
             assertThrows(SynthientException.class, iterator::hasNext);
         }
     }
@@ -243,7 +236,7 @@ class FeedTest {
                 });
                 SynthientClient client = server.client()) {
             Iterator<Export> iterator = client.proxies().allExports().iterator();
-            assertEquals("a", iterator.next().id().value());
+            assertEquals("a", iterator.next().id());
             ApiException error = assertThrows(ApiException.class, iterator::hasNext);
             assertEquals(403, error.statusCode());
             assertFalse(server.requests.isEmpty());
@@ -264,9 +257,9 @@ class FeedTest {
                 });
                 SynthientClient client = server.clientBuilder().maxRetries(0).build()) {
             Iterator<Export> iterator = client.proxies().allExports().iterator();
-            assertEquals("a", iterator.next().id().value());
+            assertEquals("a", iterator.next().id());
             assertThrows(ApiException.class, iterator::hasNext);
-            assertEquals("b", iterator.next().id().value());
+            assertEquals("b", iterator.next().id());
             assertFalse(iterator.hasNext());
             assertEquals(3, server.requests.size());
         }

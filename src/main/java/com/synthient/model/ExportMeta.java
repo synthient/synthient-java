@@ -3,7 +3,6 @@ package com.synthient.model;
 import static java.util.Objects.requireNonNull;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.synthient.ExportId;
 import java.time.Instant;
 import org.jspecify.annotations.Nullable;
 
@@ -23,7 +22,7 @@ import org.jspecify.annotations.Nullable;
  * @param schema the Parquet columns
  */
 public record ExportMeta(
-        @JsonProperty(value = "id", required = true) ExportId id,
+        @JsonProperty(value = "id", required = true) String id,
         @JsonProperty(value = "stream", required = true) String stream,
         @JsonProperty(value = "kind", required = true) String kind,
         @JsonProperty(value = "format", required = true) String format,

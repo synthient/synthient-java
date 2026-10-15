@@ -5,11 +5,15 @@ import com.synthient.model.ExportMeta;
 import com.synthient.model.ExportPage;
 import java.io.InputStream;
 import java.net.URI;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import okhttp3.HttpUrl;
 import org.jspecify.annotations.Nullable;
 
@@ -21,6 +25,8 @@ import org.jspecify.annotations.Nullable;
  * @param <T> the type of the feed's stream events
  */
 public final class Feed<T> {
+    private static final Pattern EXPORT_ID = Pattern.compile("(\\d{4}-\\d{2}-\\d{2})(?:/(\\d{1,2}))?");
+
     private final Transport transport;
     private final String path;
     private final Class<T> eventType;
@@ -102,11 +108,16 @@ public final class Feed<T> {
         };
     }
 
-    /** Returns the metadata of an export, including its checksum and Parquet columns. */
-    public ExportMeta exportMeta(ExportId id) {
+    /**
+     * Returns the metadata of an export, including its checksum and Parquet columns.
+     *
+     * @param id an export ID from {@link Export#id()} or {@link ExportId}
+     * @throws IllegalArgumentException if the ID is invalid; no request is sent
+     */
+    public ExportMeta exportMeta(String id) {
         HttpUrl url = transport
                 .url(path + "/export")
-                .addPathSegments(id.toPath())
+                .addPathSegments(exportPath(id))
                 .addPathSegment("meta")
                 .build();
         return transport.call("GET", url, null, Transport.Policy.TRANSIENT, ExportMeta.class);
@@ -115,8 +126,11 @@ public final class Feed<T> {
     /**
      * Returns the presigned URL of an export's Parquet file. It is valid for 24 hours and grants access to
      * the file without an API key, so treat it as a secret.
+     *
+     * @param id an export ID from {@link Export#id()} or {@link ExportId}
+     * @throws IllegalArgumentException if the ID is invalid; no request is sent
      */
-    public URI downloadUrl(ExportId id) {
+    public URI downloadUrl(String id) {
         return exportLocation(id).uri();
     }
 
@@ -125,8 +139,11 @@ public final class Feed<T> {
      * the returned stream. Compare the file's SHA-256 with {@link Export#checksum()} to check it.
      *
      * <p>The download is not retried, and the idle timeout applies while reading.
+     *
+     * @param id an export ID from {@link Export#id()} or {@link ExportId}
+     * @throws IllegalArgumentException if the ID is invalid; no request is sent
      */
-    public InputStream download(ExportId id) {
+    public InputStream download(String id) {
         Transport.RawResponse response = transport.fetchStorage(exportLocation(id));
         if (response.statusCode() == 200) {
             return response.body();
@@ -140,9 +157,9 @@ public final class Feed<T> {
      * followed by hand so that the API key is never sent to the storage host. The location is never
      * included in errors because it is a presigned URL.
      */
-    private HttpUrl exportLocation(ExportId id) {
+    private HttpUrl exportLocation(String id) {
         HttpUrl url =
-                transport.url(path + "/export").addPathSegments(id.toPath()).build();
+                transport.url(path + "/export").addPathSegments(exportPath(id)).build();
         Transport.RawResponse response =
                 transport.send("GET", url, null, "application/json", Transport.Policy.TRANSIENT);
         int status = response.statusCode();
@@ -161,6 +178,34 @@ public final class Feed<T> {
         }
         checkRedirect(response.url(), target);
         return target;
+    }
+
+    /**
+     * Returns the path segments of an export ID, with the hour unpadded.
+     *
+     * @throws IllegalArgumentException if the ID is invalid
+     */
+    static String exportPath(String id) {
+        if (id.equals(ExportId.LATEST)) {
+            return id;
+        }
+        Matcher matcher = EXPORT_ID.matcher(id);
+        if (matcher.matches()) {
+            try {
+                LocalDate date = LocalDate.parse(matcher.group(1));
+                String hour = matcher.group(2);
+                if (hour == null) {
+                    return date.toString();
+                }
+                int parsed = Integer.parseInt(hour);
+                if (parsed <= 23) {
+                    return date + "/" + parsed;
+                }
+            } catch (DateTimeParseException e) {
+                // A day that does not exist, such as 2026-02-30, is invalid too.
+            }
+        }
+        throw new IllegalArgumentException("invalid export ID \"" + id + "\"");
     }
 
     /** Rejects a redirect that carries user info or downgrades from https to http. */
