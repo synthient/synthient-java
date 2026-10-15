@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.sun.net.httpserver.HttpHandler;
 import java.io.InputStream;
 import java.net.URI;
 import java.time.Duration;
@@ -19,11 +20,11 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class DownloadTest {
     private static final String SIGNATURE = "secret-signature";
-    private static final TestServer.Handler PARQUET =
+    private static final HttpHandler PARQUET =
             exchange -> TestServer.respond(exchange, 200, "application/octet-stream", "PAR1data");
 
     /** Serves the API under /api/v4, which redirects to the location, and export storage everywhere else. */
-    private static TestServer server(String location, TestServer.Handler storage) throws Exception {
+    private static TestServer server(String location, HttpHandler storage) throws Exception {
         return new TestServer(exchange -> {
             if (exchange.getRequestURI().getPath().startsWith("/api/v4/")) {
                 exchange.getResponseHeaders().set("Location", location);

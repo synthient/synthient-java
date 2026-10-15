@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.sun.net.httpserver.HttpHandler;
 import java.io.OutputStream;
 import java.time.Duration;
 import java.util.Arrays;
@@ -15,7 +16,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class ErrorTest {
-    private static ApiException failWith(TestServer.Handler handler) throws Exception {
+    private static ApiException failWith(HttpHandler handler) throws Exception {
         try (TestServer server = new TestServer(handler);
                 SynthientClient client = server.client()) {
             return assertThrows(ApiException.class, () -> client.lookupIp("1.1.1.1"));

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -30,16 +31,12 @@ final class TestServer implements AutoCloseable {
         }
     }
 
-    interface Handler {
-        void handle(HttpExchange exchange) throws IOException;
-    }
-
     final List<Request> requests = new CopyOnWriteArrayList<>();
     final List<Duration> sleeps = new CopyOnWriteArrayList<>();
     private final HttpServer server;
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
-    TestServer(Handler handler) throws IOException {
+    TestServer(HttpHandler handler) throws IOException {
         server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
         server.setExecutor(executor);
         server.createContext("/", exchange -> {
