@@ -120,13 +120,6 @@ class SynthientClientTest {
     }
 
     @Test
-    void toStringHidesTheKey() {
-        try (SynthientClient client = new SynthientClient("secret-key")) {
-            assertFalse(client.toString().contains("secret-key"));
-        }
-    }
-
-    @Test
     void versionMatchesTheBuild() {
         assertEquals(System.getProperty("synthient.version"), SynthientClient.VERSION);
     }

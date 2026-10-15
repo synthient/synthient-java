@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.jspecify.annotations.Nullable;
+import tools.jackson.databind.JsonNode;
 
 /**
  * A client for the Synthient API. It is immutable and safe for concurrent use; create one and reuse it.
@@ -192,7 +193,7 @@ public final class SynthientClient implements AutoCloseable {
      * @throws ApiException with status 503 if the API is unhealthy
      */
     public void health() {
-        transport.call("GET", transport.url("health").build(), null, Transport.Policy.RATE_LIMIT, HealthResponse.class);
+        transport.call("GET", transport.url("health").build(), null, Transport.Policy.RATE_LIMIT, JsonNode.class);
     }
 
     /** Returns the proxies feed. Streaming needs the {@code PROXY_FIREHOSE} scope and exports {@code PROXY_FEEDS}. */
@@ -244,11 +245,6 @@ public final class SynthientClient implements AutoCloseable {
         transport.close();
     }
 
-    @Override
-    public String toString() {
-        return "SynthientClient[version=" + VERSION + "]";
-    }
-
     /**
      * Returns whether a string is an IPv4 or IPv6 literal without ever resolving it: {@link
      * InetAddress#getByName} only skips DNS for strings that start with a hex digit or colon and contain a
@@ -274,8 +270,6 @@ public final class SynthientClient implements AutoCloseable {
             results = List.copyOf(requireNonNull(results, "results"));
         }
     }
-
-    record HealthResponse(@JsonProperty("status") @Nullable String status) {}
 
     /** Builds a {@link SynthientClient}. A builder can be reused; each build creates an independent client. */
     public static final class Builder {
