@@ -37,17 +37,27 @@ public final class Feed<T> {
         this.eventType = eventType;
     }
 
-    /** Returns the first page of exports, newest first. */
+    /** Returns the first page of exports, newest first, with the API's default page size of 100. */
     public ExportPage listExports() {
-        return listExports(null, null);
+        return fetchPage(null, null);
     }
 
-    /** Returns one page of exports, newest first. */
-    public ExportPage listExports(ListExportsParams params) {
-        return listExports(params.limit(), params.cursor());
+    /**
+     * Returns one page of exports, newest first.
+     *
+     * @param limit the page size. The API allows up to 500 and clamps larger values.
+     * @param cursor the cursor to start from, taken from {@link ExportPage#nextCursor()}, or null for the
+     *     first page
+     * @throws IllegalArgumentException if the limit is less than 1
+     */
+    public ExportPage listExports(int limit, @Nullable String cursor) {
+        if (limit < 1) {
+            throw new IllegalArgumentException("limit must be at least 1, got " + limit);
+        }
+        return fetchPage(limit, cursor);
     }
 
-    private ExportPage listExports(@Nullable Integer limit, @Nullable String cursor) {
+    private ExportPage fetchPage(@Nullable Integer limit, @Nullable String cursor) {
         HttpUrl.Builder url = transport.url(path + "/export");
         if (cursor != null) {
             url.addQueryParameter("cursor", cursor);
@@ -58,9 +68,9 @@ public final class Feed<T> {
         return transport.call("GET", url.build(), null, Transport.Policy.TRANSIENT, ExportPage.class);
     }
 
-    /** Returns every export, newest first. See {@link #allExports(ListExportsParams)}. */
+    /** Returns every export, newest first. See {@link #allExports(int, String)}. */
     public Iterable<Export> allExports() {
-        return allExports(ListExportsParams.builder().build());
+        return exports(null, null);
     }
 
     /**
@@ -70,11 +80,23 @@ public final class Feed<T> {
      *
      * <p>A failed page throws from {@code hasNext()} and can be retried by calling it again. A cursor the
      * API already returned throws {@link SynthientException} rather than looping.
+     *
+     * @param limit the page size. The API allows up to 500 and clamps larger values.
+     * @param cursor the cursor to start from, taken from {@link ExportPage#nextCursor()}, or null for the
+     *     first page
+     * @throws IllegalArgumentException if the limit is less than 1
      */
-    public Iterable<Export> allExports(ListExportsParams params) {
+    public Iterable<Export> allExports(int limit, @Nullable String cursor) {
+        if (limit < 1) {
+            throw new IllegalArgumentException("limit must be at least 1, got " + limit);
+        }
+        return exports(limit, cursor);
+    }
+
+    private Iterable<Export> exports(@Nullable Integer limit, @Nullable String start) {
         return () -> new Iterator<>() {
             private final Set<String> seen = new HashSet<>();
-            private @Nullable String cursor = params.cursor();
+            private @Nullable String cursor = start;
             private Iterator<Export> page = Collections.emptyIterator();
             private boolean lastPage;
 
@@ -87,7 +109,7 @@ public final class Feed<T> {
                     if (cursor != null && seen.contains(cursor)) {
                         throw new SynthientException("export listing returned a repeated cursor");
                     }
-                    ExportPage result = listExports(params.limit(), cursor);
+                    ExportPage result = fetchPage(limit, cursor);
                     if (cursor != null) {
                         seen.add(cursor);
                     }

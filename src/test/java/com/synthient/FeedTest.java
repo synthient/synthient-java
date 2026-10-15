@@ -124,9 +124,7 @@ class FeedTest {
                 .replace("\"kind\": \"hourly\"", "\"kind\": \"daily\"");
         try (TestServer server = new TestServer(exchange -> TestServer.json(exchange, 200, body));
                 SynthientClient client = server.client()) {
-            ExportPage page = client.proxies()
-                    .listExports(
-                            ListExportsParams.builder().limit(2).cursor("c 1").build());
+            ExportPage page = client.proxies().listExports(2, "c 1");
             assertEquals("cursor=c%201&limit=2", server.requests.getFirst().query());
             assertEquals("c2", page.nextCursor());
             Export export = page.exports().getFirst();
@@ -149,10 +147,13 @@ class FeedTest {
     }
 
     @Test
-    void rejectsInvalidLimits() {
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> ListExportsParams.builder().limit(0));
+    void rejectsInvalidLimits() throws Exception {
+        try (TestServer server = new TestServer(exchange -> TestServer.json(exchange, 200, page(null)));
+                SynthientClient client = server.client()) {
+            assertThrows(IllegalArgumentException.class, () -> client.proxies().listExports(0, null));
+            assertThrows(IllegalArgumentException.class, () -> client.proxies().allExports(0, null));
+            assertTrue(server.requests.isEmpty());
+        }
     }
 
     private static TestServer pages(Function<String, String> byCursor) throws Exception {
@@ -173,8 +174,7 @@ class FeedTest {
                 });
                 SynthientClient client = server.client()) {
             List<String> ids = new ArrayList<>();
-            ListExportsParams params = ListExportsParams.builder().limit(2).build();
-            for (Export export : client.proxies().allExports(params)) {
+            for (Export export : client.proxies().allExports(2, null)) {
                 ids.add(export.id());
             }
             assertEquals(List.of("a", "b", "c"), ids);
@@ -217,9 +217,8 @@ class FeedTest {
     void failsOnARepeatedStartingCursor() throws Exception {
         try (TestServer server = pages(cursor -> page("start", "a"));
                 SynthientClient client = server.client()) {
-            Iterator<Export> iterator = client.proxies()
-                    .allExports(ListExportsParams.builder().cursor("start").build())
-                    .iterator();
+            Iterator<Export> iterator =
+                    client.proxies().allExports(100, "start").iterator();
             assertEquals("a", iterator.next().id());
             assertThrows(SynthientException.class, iterator::hasNext);
         }
