@@ -87,7 +87,7 @@ public class ApiException extends SynthientException {
                 detail,
                 parseErrors(problem.get("errors")),
                 requestId,
-                Transport.retryAfter(headers),
+                Transport.parseRetryAfter(headers.get("Retry-After")),
                 readFailure);
     }
 

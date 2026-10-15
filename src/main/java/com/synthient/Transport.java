@@ -186,7 +186,7 @@ final class Transport {
             }
             notifyHook(response);
 
-            Duration retryAfter = retryAfter(response.headers());
+            Duration retryAfter = parseRetryAfter(response.headers().get("Retry-After"));
             int status = response.statusCode();
             boolean rateLimited = status == 429 && retryAfter != null;
             boolean serverError =
@@ -389,16 +389,14 @@ final class Transport {
                 (long) (seconds * 1e9 * ThreadLocalRandom.current().nextDouble(0.75, 1.25)));
     }
 
-    static @Nullable Duration retryAfter(Headers headers) {
-        String value = headers.get("Retry-After");
-        return value == null ? null : parseRetryAfter(value);
-    }
-
     /**
      * Parses a Retry-After value in seconds or as an HTTP date. Seconds are clamped to [0, 2^31] and a past
-     * date is zero. Returns null for a malformed value.
+     * date is zero. Returns null for a missing or malformed value.
      */
-    static @Nullable Duration parseRetryAfter(String value) {
+    static @Nullable Duration parseRetryAfter(@Nullable String value) {
+        if (value == null) {
+            return null;
+        }
         String trimmed = value.strip();
         if (INTEGER.matcher(trimmed).matches()) {
             long seconds;
