@@ -9,14 +9,12 @@ import java.util.Set;
 public final class FetchOptions {
     private final String endpoint;
     private final boolean plaintext;
-    private final boolean includeReflection;
     private final List<String> symbols;
     private final Duration timeout;
 
     private FetchOptions(Builder builder) {
         endpoint = builder.endpoint;
         plaintext = builder.plaintext;
-        includeReflection = builder.includeReflection;
         symbols = List.copyOf(builder.symbols);
         timeout = builder.timeout;
     }
@@ -36,11 +34,6 @@ public final class FetchOptions {
         return plaintext;
     }
 
-    /** Returns whether the reflection service itself is included when listing services. */
-    public boolean includeReflection() {
-        return includeReflection;
-    }
-
     /** Returns the symbols to resolve, or an empty list for every listed service. */
     public List<String> symbols() {
         return symbols;
@@ -55,7 +48,6 @@ public final class FetchOptions {
     public static final class Builder {
         private String endpoint = "";
         private boolean plaintext;
-        private boolean includeReflection;
         private final Set<String> symbols = new LinkedHashSet<>();
         private Duration timeout = Duration.ofSeconds(30);
 
@@ -76,15 +68,10 @@ public final class FetchOptions {
             return this;
         }
 
-        /** Includes the reflection service itself when listing services. */
-        public Builder includeReflection(boolean includeReflection) {
-            this.includeReflection = includeReflection;
-            return this;
-        }
-
         /**
          * Adds fully qualified service or message names to resolve, such as {@code synthient.v1.SynthientService}.
-         * Blank and repeated names are ignored. Without any, every listed service is resolved.
+         * Blank and repeated names are ignored. Without any, every service the server lists is resolved except
+         * the reflection service itself, which can be named here instead.
          */
         public Builder symbols(String... symbols) {
             for (String symbol : symbols) {

@@ -82,7 +82,7 @@ public final class GrpcSchema {
 
             List<String> symbols = options.symbols();
             if (symbols.isEmpty()) {
-                symbols = reflector.listServices(options.includeReflection());
+                symbols = reflector.listServices();
             }
             if (symbols.isEmpty()) {
                 throw new SchemaException("the server lists no services");
@@ -124,7 +124,7 @@ public final class GrpcSchema {
      * @throws IllegalArgumentException if the endpoint has an invalid host, port, or scheme, or includes
      *     user info, a path other than {@code /}, a query, or a fragment
      */
-    public static Endpoint normalizeEndpoint(String raw) {
+    static Endpoint normalizeEndpoint(String raw) {
         String value = raw.strip();
         if (value.isEmpty()) {
             value = DEFAULT_ENDPOINT;
@@ -267,7 +267,7 @@ public final class GrpcSchema {
             });
         }
 
-        List<String> listServices(boolean includeReflection) {
+        List<String> listServices() {
             ServerReflectionResponse response =
                     call(ServerReflectionRequest.newBuilder().setListServices(""));
             if (!response.hasListServicesResponse()) {
@@ -276,7 +276,7 @@ public final class GrpcSchema {
             Set<String> services = new TreeSet<>();
             for (ServiceResponse service : response.getListServicesResponse().getServiceList()) {
                 String name = service.getName().strip();
-                if (!name.isEmpty() && (includeReflection || !name.startsWith("grpc.reflection."))) {
+                if (!name.isEmpty() && !name.startsWith("grpc.reflection.")) {
                     services.add(name);
                 }
             }

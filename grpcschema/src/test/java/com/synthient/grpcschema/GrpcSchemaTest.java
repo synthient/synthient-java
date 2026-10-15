@@ -85,7 +85,7 @@ class GrpcSchemaTest {
         Schema schema = GrpcSchema.fetch(
                 "",
                 local().endpoint("grpc://127.0.0.1:" + server.getPort())
-                        .includeReflection(true)
+                        .symbols("grpc.health.v1.Health", "grpc.reflection.v1.ServerReflection")
                         .build());
         assertEquals(List.of("grpc.health.v1.Health", "grpc.reflection.v1.ServerReflection"), schema.symbols());
         assertEquals(List.of(""), keys);
