@@ -40,6 +40,13 @@ class SynthientClientTest {
     }
 
     @ParameterizedTest
+    @ValueSource(strings = {"secret\nkey", "secret\0key", "secret\u00e9key"})
+    void rejectsKeysThatAreNotPrintableAscii(String key) {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> new SynthientClient(key));
+        assertFalse(error.getMessage().contains("secret"));
+    }
+
+    @ParameterizedTest
     @ValueSource(
             strings = {
                 "ftp://api.synthient.com",

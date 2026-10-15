@@ -61,7 +61,7 @@ public final class SynthientClient implements AutoCloseable {
     /**
      * Creates a client with the API key in the {@code SYNTHIENT_API_KEY} environment variable.
      *
-     * @throws IllegalArgumentException if the variable is missing or blank
+     * @throws IllegalArgumentException if the variable is missing or blank, or the key is not printable ASCII
      */
     public SynthientClient() {
         this(builder());
@@ -70,7 +70,7 @@ public final class SynthientClient implements AutoCloseable {
     /**
      * Creates a client with an API key.
      *
-     * @throws IllegalArgumentException if the key is blank
+     * @throws IllegalArgumentException if the key is blank or not printable ASCII
      */
     public SynthientClient(String apiKey) {
         this(builder().apiKey(apiKey));
@@ -81,11 +81,16 @@ public final class SynthientClient implements AutoCloseable {
         if (apiKey == null || apiKey.isBlank()) {
             throw new IllegalArgumentException("missing API key: pass one or set SYNTHIENT_API_KEY");
         }
+        apiKey = apiKey.strip();
+        // OkHttp puts a rejected header value in its exception message, so the key is checked first.
+        if (apiKey.chars().anyMatch(c -> c < 0x20 || c > 0x7e)) {
+            throw new IllegalArgumentException("invalid API key: it must be printable ASCII");
+        }
         String userAgent = "synthient-java/" + VERSION + (builder.userAgent == null ? "" : " " + builder.userAgent);
         transport = new Transport(
                 builder.httpClient,
                 builder.baseUrl,
-                apiKey.strip(),
+                apiKey,
                 userAgent,
                 builder.maxRetries,
                 builder.timeout,
@@ -378,7 +383,7 @@ public final class SynthientClient implements AutoCloseable {
          * Creates the client.
          *
          * @throws IllegalArgumentException if no API key was set and {@code SYNTHIENT_API_KEY} is missing or
-         *     blank
+         *     blank, or the key is not printable ASCII
          */
         public SynthientClient build() {
             return new SynthientClient(this);
