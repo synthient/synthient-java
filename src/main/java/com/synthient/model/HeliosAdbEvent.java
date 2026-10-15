@@ -13,13 +13,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @param hash a hex SHA-256 shared by every command in the session
  */
 public record HeliosAdbEvent(
-        @JsonProperty(value = "session", required = true) String session,
+        @JsonProperty("session") String session,
 
         @JsonProperty(value = "sequential_id", required = true)
         long sequentialId,
 
-        @JsonProperty(value = "command", required = true) String command,
-        @JsonProperty(value = "hash", required = true) String hash) {
+        @JsonProperty("command") String command,
+        @JsonProperty("hash") String hash) {
 
     public HeliosAdbEvent {
         requireNonNull(session, "session");

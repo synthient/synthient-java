@@ -21,15 +21,14 @@ import org.jspecify.annotations.Nullable;
  * @param raw the raw request bytes as base64, or null when absent
  */
 public record HeliosHttpEvent(
-        @JsonProperty(value = "timestamp", required = true)
-        @JsonFormat(without = JsonFormat.Feature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS)
+        @JsonProperty("timestamp") @JsonFormat(without = JsonFormat.Feature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS)
         Instant timestamp,
 
-        @JsonProperty(value = "tunnel_id", required = true) BigInteger tunnelId,
-        @JsonProperty(value = "domain", required = true) String domain,
+        @JsonProperty("tunnel_id") BigInteger tunnelId,
+        @JsonProperty("domain") String domain,
         @JsonProperty(value = "port", required = true) int port,
-        @JsonProperty(value = "protocol", required = true) String protocol,
-        @JsonProperty(value = "meta", required = true) HeliosMeta meta,
+        @JsonProperty("protocol") String protocol,
+        @JsonProperty("meta") HeliosMeta meta,
         @JsonProperty("details") @Nullable HttpRequestDetails details,
         @JsonProperty("raw") @Nullable String raw) {
 

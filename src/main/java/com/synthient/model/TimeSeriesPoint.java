@@ -13,7 +13,7 @@ import java.time.Instant;
  * @param uniqueIps unique source IPs that day
  */
 public record TimeSeriesPoint(
-        @JsonProperty(value = "date", required = true) Instant date,
+        @JsonProperty("date") Instant date,
         @JsonProperty(value = "events", required = true) long events,
         @JsonProperty(value = "unique_ips", required = true) long uniqueIps) {
 

@@ -15,9 +15,7 @@ import java.util.List;
 public record UniqueIps(
         @JsonProperty(value = "value_24h", required = true) long value24h,
         @JsonProperty(value = "value_30d", required = true) long value30d,
-
-        @JsonProperty(value = "sparkline_24h", required = true)
-        List<Long> sparkline24h) {
+        @JsonProperty("sparkline_24h") List<Long> sparkline24h) {
 
     public UniqueIps {
         sparkline24h = List.copyOf(requireNonNull(sparkline24h, "sparkline24h"));

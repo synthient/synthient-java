@@ -13,9 +13,9 @@ import java.time.Instant;
  * @param createdAt when the key was created
  */
 public record AccountApiKey(
-        @JsonProperty(value = "id", required = true) String id,
-        @JsonProperty(value = "name", required = true) String name,
-        @JsonProperty(value = "created_at", required = true) Instant createdAt) {
+        @JsonProperty("id") String id,
+        @JsonProperty("name") String name,
+        @JsonProperty("created_at") Instant createdAt) {
 
     public AccountApiKey {
         requireNonNull(id, "id");

@@ -21,17 +21,15 @@ import org.jspecify.annotations.Nullable;
  * @param downloadPath the API path that redirects to the file
  */
 public record Export(
-        @JsonProperty(value = "id", required = true) String id,
-        @JsonProperty(value = "kind", required = true) String kind,
-        @JsonProperty(value = "date", required = true) LocalDate date,
+        @JsonProperty("id") String id,
+        @JsonProperty("kind") String kind,
+        @JsonProperty("date") LocalDate date,
         @JsonProperty("hour") @Nullable Integer hour,
         @JsonProperty(value = "size_bytes", required = true) long sizeBytes,
         @JsonProperty(value = "row_count", required = true) long rowCount,
-        @JsonProperty(value = "checksum", required = true) String checksum,
-        @JsonProperty(value = "created_at", required = true) Instant createdAt,
-
-        @JsonProperty(value = "download_path", required = true)
-        String downloadPath) {
+        @JsonProperty("checksum") String checksum,
+        @JsonProperty("created_at") Instant createdAt,
+        @JsonProperty("download_path") String downloadPath) {
 
     public Export {
         requireNonNull(id, "id");

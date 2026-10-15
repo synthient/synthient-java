@@ -14,7 +14,7 @@ import org.jspecify.annotations.Nullable;
  * @param intelligence risk, category, and provider data, or null when the API has none
  */
 public record IpInfo(
-        @JsonProperty(value = "ip", required = true) String ip,
+        @JsonProperty("ip") String ip,
         @JsonProperty("network") @Nullable Network network,
         @JsonProperty("location") @Nullable Location location,
         @JsonProperty("intelligence") @Nullable Intelligence intelligence) {

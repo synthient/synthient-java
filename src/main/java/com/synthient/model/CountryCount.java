@@ -12,9 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @param events events from it
  */
 public record CountryCount(
-        @JsonProperty(value = "country_code", required = true)
-        String countryCode,
-
+        @JsonProperty("country_code") String countryCode,
         @JsonProperty(value = "unique_ips", required = true) long uniqueIps,
         @JsonProperty(value = "events", required = true) long events) {
 

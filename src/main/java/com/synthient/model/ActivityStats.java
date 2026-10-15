@@ -23,7 +23,7 @@ public record ActivityStats(
         @JsonProperty(value = "p95_per_hour", required = true)
         long p95PerHour,
 
-        @JsonProperty(value = "cadence", required = true) String cadence) {
+        @JsonProperty("cadence") String cadence) {
 
     public ActivityStats {
         requireNonNull(cadence, "cadence");

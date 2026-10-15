@@ -15,18 +15,11 @@ import java.time.Instant;
  * @param countryCode the country of the source address
  */
 public record DomainEvent(
-        @JsonProperty(value = "timestamp", required = true) Instant timestamp,
-
-        @JsonProperty(value = "source_ip_masked", required = true)
-        String sourceIp,
-
-        @JsonProperty(value = "target_subdomain", required = true)
-        String targetSubdomain,
-
+        @JsonProperty("timestamp") Instant timestamp,
+        @JsonProperty("source_ip_masked") String sourceIp,
+        @JsonProperty("target_subdomain") String targetSubdomain,
         @JsonProperty(value = "port", required = true) int port,
-
-        @JsonProperty(value = "country_code", required = true)
-        String countryCode) {
+        @JsonProperty("country_code") String countryCode) {
 
     public DomainEvent {
         requireNonNull(timestamp, "timestamp");

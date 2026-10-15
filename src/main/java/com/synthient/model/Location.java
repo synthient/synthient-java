@@ -16,13 +16,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @param geoHash the geohash of the coordinates
  */
 public record Location(
-        @JsonProperty(value = "country", required = true) String country,
-        @JsonProperty(value = "state", required = true) String state,
-        @JsonProperty(value = "city", required = true) String city,
-        @JsonProperty(value = "timezone", required = true) String timezone,
+        @JsonProperty("country") String country,
+        @JsonProperty("state") String state,
+        @JsonProperty("city") String city,
+        @JsonProperty("timezone") String timezone,
         @JsonProperty(value = "latitude", required = true) double latitude,
         @JsonProperty(value = "longitude", required = true) double longitude,
-        @JsonProperty(value = "geo_hash", required = true) String geoHash) {
+        @JsonProperty("geo_hash") String geoHash) {
 
     public Location {
         requireNonNull(country, "country");

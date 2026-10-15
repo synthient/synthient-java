@@ -14,8 +14,8 @@ import org.jspecify.annotations.Nullable;
  * @param nextCursor the cursor of the next page, or null on the last page
  */
 public record ExportPage(
-        @JsonProperty(value = "stream", required = true) String stream,
-        @JsonProperty(value = "feeds", required = true) List<Export> exports,
+        @JsonProperty("stream") String stream,
+        @JsonProperty("feeds") List<Export> exports,
         @JsonProperty("next_cursor") @Nullable String nextCursor) {
 
     public ExportPage {

@@ -18,18 +18,12 @@ import org.jspecify.annotations.Nullable;
  * @param apiKey the key used for the request, or null when the API omits it
  */
 public record Account(
-        @JsonProperty(value = "first_name", required = true) String firstName,
-        @JsonProperty(value = "last_name", required = true) String lastName,
-        @JsonProperty(value = "email", required = true) String email,
-
-        @JsonProperty(value = "organization", required = true)
-        Organization organization,
-
-        @JsonProperty(value = "scopes", required = true) List<String> scopes,
-
-        @JsonProperty(value = "lookup_quota", required = true)
-        LookupQuota lookupQuota,
-
+        @JsonProperty("first_name") String firstName,
+        @JsonProperty("last_name") String lastName,
+        @JsonProperty("email") String email,
+        @JsonProperty("organization") Organization organization,
+        @JsonProperty("scopes") List<String> scopes,
+        @JsonProperty("lookup_quota") LookupQuota lookupQuota,
         @JsonProperty("api_key") @Nullable AccountApiKey apiKey) {
 
     public Account {

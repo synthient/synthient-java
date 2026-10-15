@@ -22,17 +22,17 @@ import org.jspecify.annotations.Nullable;
  * @param schema the Parquet columns
  */
 public record ExportMeta(
-        @JsonProperty(value = "id", required = true) String id,
-        @JsonProperty(value = "stream", required = true) String stream,
-        @JsonProperty(value = "kind", required = true) String kind,
-        @JsonProperty(value = "format", required = true) String format,
-        @JsonProperty(value = "date", required = true) Instant date,
+        @JsonProperty("id") String id,
+        @JsonProperty("stream") String stream,
+        @JsonProperty("kind") String kind,
+        @JsonProperty("format") String format,
+        @JsonProperty("date") Instant date,
         @JsonProperty("hour") @Nullable Integer hour,
         @JsonProperty(value = "rows", required = true) long rows,
         @JsonProperty(value = "size", required = true) long size,
-        @JsonProperty(value = "checksum", required = true) String checksum,
-        @JsonProperty(value = "created_at", required = true) Instant createdAt,
-        @JsonProperty(value = "schema", required = true) ParquetSchema schema) {
+        @JsonProperty("checksum") String checksum,
+        @JsonProperty("created_at") Instant createdAt,
+        @JsonProperty("schema") ParquetSchema schema) {
 
     public ExportMeta {
         requireNonNull(id, "id");

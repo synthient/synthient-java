@@ -88,6 +88,8 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 
 /** Checks the SDK against the OpenAPI spec it was built from, {@code .sdkgen/openapi.json}. */
 class ConformanceTest {
@@ -204,8 +206,9 @@ class ConformanceTest {
             JsonNode property = properties.get(name);
             boolean isRequired = required.contains(name);
             boolean nullable = !isRequired || property.path("nullable").asBoolean(false);
+            // A required reference that is never null is checked by the record's constructor instead.
             assertEquals(
-                    isRequired,
+                    isRequired && (nullable || component.getType().isPrimitive()),
                     component.getAccessor().getAnnotation(JsonProperty.class).required(),
                     where + " required");
             assertEquals(
@@ -266,6 +269,64 @@ class ConformanceTest {
             default -> fail(where + " has an unknown type " + schema);
         };
         assertTrue(allowed.contains(type), where + " is " + type.getTypeName() + ", expected one of " + allowed);
+    }
+
+    @TestFactory
+    Stream<DynamicTest> missingOrNullRequiredFieldsFailToDecode() {
+        return MODELS.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(model -> DynamicTest.dynamicTest(model.getKey(), () -> {
+                    JsonNode schema = schemas().get(model.getKey());
+                    JsonNode properties = schema.path("properties");
+                    ObjectNode sample = (ObjectNode) sample(schema, "");
+                    assertNotNull(Json.decode(Json.MAPPER.writeValueAsBytes(sample), model.getValue()));
+                    for (JsonNode required : schema.path("required")) {
+                        String name = required.asString();
+                        ObjectNode invalid = sample.deepCopy();
+                        invalid.remove(name);
+                        assertThrows(
+                                SynthientException.class,
+                                () -> Json.decode(Json.MAPPER.writeValueAsBytes(invalid), model.getValue()),
+                                name + " missing");
+                        if (!properties.path(name).path("nullable").asBoolean(false)) {
+                            invalid.putNull(name);
+                            assertThrows(
+                                    SynthientException.class,
+                                    () -> Json.decode(Json.MAPPER.writeValueAsBytes(invalid), model.getValue()),
+                                    name + " null");
+                        }
+                    }
+                }));
+    }
+
+    /** Returns a valid instance of a schema with only its required properties. */
+    private static JsonNode sample(JsonNode schema, String name) {
+        if (schema.has("$ref")) {
+            return sample(schemas().get(schema.get("$ref").asString().replace("#/components/schemas/", "")), name);
+        }
+        if (schema.has("allOf")) {
+            return sample(schema.get("allOf").get(0), name);
+        }
+        JsonNodeFactory nodes = Json.MAPPER.getNodeFactory();
+        String format = schema.path("format").asString("");
+        return switch (schema.path("type").asString("")) {
+            case "string" ->
+                nodes.stringNode(
+                        name.equals("date") ? "2026-05-03" : format.equals("date-time") ? "2026-05-03T07:00:00Z" : "x");
+            case "integer" -> nodes.numberNode(1);
+            case "number" -> nodes.numberNode(1.5);
+            case "boolean" -> nodes.booleanNode(true);
+            case "array" -> nodes.arrayNode();
+            case "object" -> {
+                ObjectNode object = nodes.objectNode();
+                for (JsonNode required : schema.path("required")) {
+                    String property = required.asString();
+                    object.set(property, sample(schema.path("properties").get(property), property));
+                }
+                yield object;
+            }
+            default -> fail("unknown type " + schema);
+        };
     }
 
     @Test

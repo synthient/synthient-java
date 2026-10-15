@@ -269,9 +269,7 @@ public final class SynthientClient implements AutoCloseable {
         }
     }
 
-    record BatchResponse(
-            @JsonProperty(value = "results", required = true)
-            List<IpInfo> results) {
+    record BatchResponse(@JsonProperty("results") List<IpInfo> results) {
         BatchResponse {
             results = List.copyOf(requireNonNull(results, "results"));
         }

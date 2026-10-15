@@ -16,10 +16,10 @@ import java.util.List;
  */
 public record Intelligence(
         @JsonProperty(value = "risk_score", required = true) int riskScore,
-        @JsonProperty(value = "devices", required = true) List<Device> devices,
-        @JsonProperty(value = "behavior", required = true) List<String> behavior,
-        @JsonProperty(value = "categories", required = true) List<String> categories,
-        @JsonProperty(value = "providers", required = true) List<Provider> providers) {
+        @JsonProperty("devices") List<Device> devices,
+        @JsonProperty("behavior") List<String> behavior,
+        @JsonProperty("categories") List<String> categories,
+        @JsonProperty("providers") List<Provider> providers) {
 
     public Intelligence {
         devices = List.copyOf(requireNonNull(devices, "devices"));

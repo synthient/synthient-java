@@ -10,8 +10,7 @@ import java.util.List;
  *
  * @param fields the columns in file order
  */
-public record ParquetSchema(
-        @JsonProperty(value = "fields", required = true) List<ParquetColumn> fields) {
+public record ParquetSchema(@JsonProperty("fields") List<ParquetColumn> fields) {
 
     public ParquetSchema {
         fields = List.copyOf(requireNonNull(fields, "fields"));

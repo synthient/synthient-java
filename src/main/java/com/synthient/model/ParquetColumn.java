@@ -11,8 +11,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @param type the column type, one of {@link ParquetType}
  */
 public record ParquetColumn(
-        @JsonProperty(value = "name", required = true) String name,
-        @JsonProperty(value = "type", required = true) String type) {
+        @JsonProperty("name") String name,
+        @JsonProperty("type") String type) {
 
     public ParquetColumn {
         requireNonNull(name, "name");

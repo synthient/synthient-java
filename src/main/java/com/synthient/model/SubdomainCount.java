@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @param count events targeting it
  */
 public record SubdomainCount(
-        @JsonProperty(value = "subdomain", required = true) String subdomain,
+        @JsonProperty("subdomain") String subdomain,
         @JsonProperty(value = "count", required = true) long count) {
 
     public SubdomainCount {

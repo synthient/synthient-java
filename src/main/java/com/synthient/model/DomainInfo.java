@@ -24,32 +24,17 @@ import org.jspecify.annotations.Nullable;
  * @param topAsn the source network with the most events, or null when there were none
  */
 public record DomainInfo(
-        @JsonProperty(value = "domain", required = true) String domain,
-        @JsonProperty(value = "status", required = true) String status,
-        @JsonProperty(value = "stats", required = true) DomainStats stats,
-
-        @JsonProperty(value = "time_series", required = true)
-        List<TimeSeriesPoint> timeSeries,
-
-        @JsonProperty(value = "unique_ips", required = true) UniqueIps uniqueIps,
-
-        @JsonProperty(value = "top_subdomains", required = true)
-        List<SubdomainCount> topSubdomains,
-
-        @JsonProperty(value = "top_ports", required = true) List<PortCount> topPorts,
-
-        @JsonProperty(value = "geo_distribution", required = true)
-        List<CountryCount> geoDistribution,
-
-        @JsonProperty(value = "hour_dow_heatmap", required = true)
-        List<List<Long>> hourDowHeatmap,
-
-        @JsonProperty(value = "activity_stats", required = true)
-        ActivityStats activityStats,
-
-        @JsonProperty(value = "recent_events", required = true)
-        List<DomainEvent> recentEvents,
-
+        @JsonProperty("domain") String domain,
+        @JsonProperty("status") String status,
+        @JsonProperty("stats") DomainStats stats,
+        @JsonProperty("time_series") List<TimeSeriesPoint> timeSeries,
+        @JsonProperty("unique_ips") UniqueIps uniqueIps,
+        @JsonProperty("top_subdomains") List<SubdomainCount> topSubdomains,
+        @JsonProperty("top_ports") List<PortCount> topPorts,
+        @JsonProperty("geo_distribution") List<CountryCount> geoDistribution,
+        @JsonProperty("hour_dow_heatmap") List<List<Long>> hourDowHeatmap,
+        @JsonProperty("activity_stats") ActivityStats activityStats,
+        @JsonProperty("recent_events") List<DomainEvent> recentEvents,
         @JsonProperty("top_asn") @Nullable AsnCount topAsn) {
 
     public DomainInfo {

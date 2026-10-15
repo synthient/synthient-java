@@ -13,7 +13,7 @@ import java.time.Duration;
  */
 public record LookupQuota(
         @JsonProperty(value = "credits", required = true) long credits,
-        @JsonProperty(value = "resets_in", required = true) Duration resetsIn) {
+        @JsonProperty("resets_in") Duration resetsIn) {
 
     public LookupQuota {
         requireNonNull(resetsIn, "resetsIn");

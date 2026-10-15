@@ -18,8 +18,8 @@ import org.jspecify.annotations.Nullable;
  */
 public record Network(
         @JsonProperty(value = "asn", required = true) long asn,
-        @JsonProperty(value = "isp", required = true) String isp,
-        @JsonProperty(value = "type", required = true) String type,
+        @JsonProperty("isp") String isp,
+        @JsonProperty("type") String type,
         @JsonProperty("org") @Nullable String org,
         @JsonProperty("domain") @Nullable String domain,
         @JsonProperty("abuse_email") @Nullable String abuseEmail,

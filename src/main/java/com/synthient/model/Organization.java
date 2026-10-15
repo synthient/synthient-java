@@ -12,9 +12,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @param relation the account's role in it, one of {@link Relation}
  */
 public record Organization(
-        @JsonProperty(value = "id", required = true) String id,
-        @JsonProperty(value = "name", required = true) String name,
-        @JsonProperty(value = "relation", required = true) String relation) {
+        @JsonProperty("id") String id,
+        @JsonProperty("name") String name,
+        @JsonProperty("relation") String relation) {
 
     public Organization {
         requireNonNull(id, "id");

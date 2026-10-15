@@ -13,9 +13,9 @@ import java.time.Instant;
  * @param lastSeen when the provider was last seen using the address
  */
 public record Provider(
-        @JsonProperty(value = "provider", required = true) String name,
-        @JsonProperty(value = "type", required = true) String type,
-        @JsonProperty(value = "last_seen", required = true) Instant lastSeen) {
+        @JsonProperty("provider") String name,
+        @JsonProperty("type") String type,
+        @JsonProperty("last_seen") Instant lastSeen) {
 
     public Provider {
         requireNonNull(name, "name");

@@ -13,9 +13,9 @@ import java.time.Instant;
  * @param lastSeen when the device was last seen
  */
 public record Device(
-        @JsonProperty(value = "os", required = true) String os,
-        @JsonProperty(value = "version", required = true) String version,
-        @JsonProperty(value = "last_seen", required = true) Instant lastSeen) {
+        @JsonProperty("os") String os,
+        @JsonProperty("version") String version,
+        @JsonProperty("last_seen") Instant lastSeen) {
 
     public Device {
         requireNonNull(os, "os");
