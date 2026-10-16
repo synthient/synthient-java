@@ -7,7 +7,7 @@ import java.time.LocalDate;
  * such as {@code 2026-05-03/7}. {@link com.synthient.model.Export#id()} returns ready-made IDs.
  *
  * <p>An hourly export stays available until its day is rolled up into the daily export, shortly after
- * midnight UTC. After that the API answers 400 for the hour. While a day is being rolled up, the daily
+ * 00:30 UTC the next day. After that the API answers 400 for the hour. While a day is being rolled up, the daily
  * export answers 404 with a {@link ApiException#retryAfter() Retry-After}.
  */
 public final class ExportId {

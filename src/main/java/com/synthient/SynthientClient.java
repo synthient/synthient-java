@@ -37,9 +37,10 @@ import tools.jackson.databind.JsonNode;
  *
  * <p>Failed calls throw {@link ApiException} when the API answers with an error status, {@link
  * ApiConnectionException} when no response arrives, and {@link SynthientException} when the response is
- * invalid. Requests are retried after rate limits that carry a {@code Retry-After}, and free requests also
- * after server errors and connection failures. Neither the SDK nor its HTTP client ever resends a billed
- * lookup after a failure the server may have charged for.
+ * invalid. Requests are retried after rate limits that carry a {@code Retry-After}, and account and feed
+ * requests also after server errors and after connection failures and timeouts before the response arrives,
+ * except TLS failures. Neither the SDK nor its HTTP client ever resends a billed lookup after a failure the
+ * server may have charged for.
  *
  * <p>Close the client to release its connections. A client built with a caller's {@link OkHttpClient} leaves
  * that client open.
@@ -155,13 +156,13 @@ public final class SynthientClient implements AutoCloseable {
                 .results();
     }
 
-    /** Looks up proxy traffic to a domain, with the API's default of 50 recent events. Costs one credit. */
+    /** Looks up honeypot intelligence for a domain, with the API's default of 50 recent events. Costs one credit. */
     public DomainInfo lookupDomain(String domain) {
         return fetchDomain(domain, null);
     }
 
     /**
-     * Looks up proxy traffic to a domain. Costs one credit.
+     * Looks up honeypot intelligence for a domain. Costs one credit.
      *
      * @param domain the domain; internationalized names must be in Punycode
      * @param limit the number of recent events to return, clamped by the API to 1000
@@ -345,8 +346,10 @@ public final class SynthientClient implements AutoCloseable {
 
         /**
          * Sets the OkHttp client to derive the SDK's client from, for example to configure a proxy, TLS, or
-         * interceptors. The SDK shares its connection pool but uses its own timeouts and dispatcher, and never
-         * follows redirects, caches responses, or lets OkHttp resend a request. The SDK never closes it.
+         * interceptors. The SDK shares its connection pool and connect timeout but uses its own dispatcher and
+         * read and write timeouts. It never follows the API's redirects, caches responses, or lets OkHttp resend
+         * a request. Redirects within export storage are followed, but never from https to http. The SDK never
+         * closes it.
          */
         public Builder httpClient(OkHttpClient httpClient) {
             this.httpClient = requireNonNull(httpClient, "httpClient");

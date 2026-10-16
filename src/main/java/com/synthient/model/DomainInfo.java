@@ -7,7 +7,7 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Proxy traffic to a domain over the last 30 days. A domain the API has never seen is {@link
+ * Honeypot intelligence for a domain over the last 30 days. A domain the API has never seen is {@link
  * DomainStatus#INACTIVE} with zeroed statistics.
  *
  * @param domain the domain

@@ -75,7 +75,7 @@ public final class Feed<T> {
 
     /**
      * Returns every export from the given cursor on, newest first, fetching pages as iteration reaches
-     * them. Each call to {@code iterator()} starts again from the first page, and stopping early fetches
+     * them. Each call to {@code iterator()} starts again from that cursor, and stopping early fetches
      * nothing more.
      *
      * <p>A failed page throws from {@code hasNext()} and can be retried by calling it again. A cursor the
