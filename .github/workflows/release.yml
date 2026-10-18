@@ -1,4 +1,4 @@
-name: Release
+name: release
 
 on:
   push:
@@ -10,23 +10,38 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment: release
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-java@v6
+      - name: Check the tag matches the SDK version
+        run: |
+          version=$(sed -n 's/^version=//p' gradle.properties)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::$GITHUB_REF_NAME does not match the SDK version $version"
+            exit 1
+          fi
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
-          java-version: "21"
-          server-id: central
-          server-username-env-var: MAVEN_CENTRAL_USERNAME
-          server-password-env-var: MAVEN_CENTRAL_PASSWORD
-          gpg-private-key: ${{ secrets.SIGNING_KEY }}
-          gpg-passphrase-env-var: SIGNING_PASSWORD
-      - run: mvn -B -ntp verify
-      - run: mvn -B -ntp deploy
+          java-version: |
+            21
+            25
+      - name: Use the installed JDKs
+        run: |
+          mkdir -p ~/.gradle
+          echo "org.gradle.java.installations.fromEnv=JAVA_HOME_21_X64,JAVA_HOME_25_X64" >> ~/.gradle/gradle.properties
+          echo "org.gradle.java.installations.auto-download=false" >> ~/.gradle/gradle.properties
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-disabled: true
+      - run: ./gradlew test
+      - name: Sign and publish to Maven Central
+        run: ./gradlew nmcpPublishAggregationToCentralPortal
         env:
           MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
           SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}

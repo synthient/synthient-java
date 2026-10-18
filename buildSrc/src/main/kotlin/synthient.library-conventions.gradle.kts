@@ -2,6 +2,7 @@ plugins {
     id("synthient.java-conventions")
     `java-library`
     `maven-publish`
+    signing
 }
 
 val libs = versionCatalogs.named("libs")
@@ -72,5 +73,13 @@ publishing {
             name = "staging"
             url = uri(rootProject.layout.buildDirectory.dir("staging-repo"))
         }
+    }
+}
+
+signing {
+    val signingKey = System.getenv("SIGNING_KEY")
+    if (signingKey != null) {
+        useInMemoryPgpKeys(signingKey, System.getenv("SIGNING_PASSWORD"))
+        sign(publishing.publications)
     }
 }
