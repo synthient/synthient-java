@@ -22,9 +22,9 @@ import org.jspecify.annotations.Nullable;
  * }
  * }
  *
- * <p>The server ends a stream after about 30 minutes, and iteration then ends normally. The API has no
+ * <p>The server ends a stream after up to 30 minutes, and iteration then ends normally. The API has no
  * cursor, so events sent between two connections are lost; callers that want a continuous feed reconnect
- * in a loop, pausing briefly between attempts. A lost connection throws {@link ApiConnectionException},
+ * in a loop, pausing only after a failure. A lost connection throws {@link ApiConnectionException},
  * and an event that cannot be decoded throws {@link SynthientException}; either ends the stream.
  *
  * <p>{@link #iterator()} may be called once. {@link #close()} may be called from another thread, which ends
