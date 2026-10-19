@@ -1,6 +1,6 @@
 package com.synthient.model;
 
-/** Known values of {@link Device#os()}. The API may add values, so code should accept others. */
+/** Known values of {@link Device#os()}. The API may add others. */
 public final class OperatingSystem {
     public static final String ANDROID = "Android";
     public static final String CHROME_OS = "Chrome OS";

@@ -33,12 +33,11 @@ import okhttp3.Response;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Sends API requests: builds them, applies the retry policy, and reads bounded bodies.
+ * Sends API requests, applies the retry policy, and reads bounded bodies.
  *
- * <p>Every request is sent at most once per attempt, and only this class decides whether to make another
- * attempt. OkHttp is configured so that it never resends a request on its own: connection failures,
- * redirects, and authentication challenges are returned rather than retried, and a 503's {@code
- * Retry-After}, which OkHttp would otherwise act on, is hidden from it until the response reaches this class.
+ * <p>Only this class decides whether to retry. OkHttp never resends a request on its own: connection
+ * failures, redirects, and authentication challenges are returned rather than retried, and a 503's {@code
+ * Retry-After}, which OkHttp would act on, is hidden from it until the response reaches this class.
  */
 final class Transport {
     static final long MAX_HEADER_SECONDS = 1L << 31;
@@ -66,10 +65,7 @@ final class Transport {
         void sleep(Duration duration) throws InterruptedException;
     }
 
-    /**
-     * The status, headers, and unread body of one HTTP response. Closing the body cancels the call, so it
-     * also stops a read blocked in another thread.
-     */
+    /** The status, headers, and unread body of one HTTP response. The body can be closed from any thread. */
     record RawResponse(int statusCode, Headers headers, HttpUrl url, InputStream body) {}
 
     private final OkHttpClient http;
@@ -84,9 +80,8 @@ final class Transport {
     private final AtomicBoolean closed = new AtomicBoolean();
 
     /**
-     * Creates a transport on its own OkHttp client, or on one derived from a borrowed client that shares
-     * its connection pool, proxy, and TLS settings. Either way the dispatcher belongs to the transport: it
-     * runs calls on virtual threads without OkHttp's per-host concurrency limit.
+     * Creates a transport on its own OkHttp client or on one derived from a borrowed client. Either way the
+     * transport owns the dispatcher, which runs calls on virtual threads without OkHttp's per-host limit.
      */
     Transport(
             @Nullable OkHttpClient borrowed,
@@ -265,9 +260,9 @@ final class Transport {
     }
 
     /**
-     * A response body that can be closed from any thread. Closing cancels the call first, which makes a read
-     * blocked in another thread fail at once, and then closes the body once no read is in progress, because
-     * OkHttp's streams are not safe for concurrent use.
+     * A response body that can be closed from any thread. Closing cancels the call, which fails a blocked
+     * read at once, and then closes the body once no read is in progress, because OkHttp's streams are not
+     * safe for concurrent use.
      */
     private static final class CallBody extends InputStream {
         private final Call call;
@@ -346,7 +341,7 @@ final class Transport {
 
     /**
      * Stops new requests and cancels calls waiting for a response. Idle connections are closed unless they
-     * belong to a borrowed client. Open streams and downloads keep running until they are closed.
+     * belong to a borrowed client.
      */
     void close() {
         if (closed.compareAndSet(false, true)) {

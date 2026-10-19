@@ -1,6 +1,6 @@
 package com.synthient.model;
 
-/** Known values of {@link ActivityStats#cadence()}. The API may add values, so code should accept others. */
+/** Known values of {@link ActivityStats#cadence()}. The API may add others. */
 public final class Cadence {
     public static final String NO_ACTIVITY = "No activity in the last 30 days.";
     public static final String EVEN = "Activity is evenly distributed across the day.";

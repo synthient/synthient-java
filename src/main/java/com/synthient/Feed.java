@@ -244,8 +244,7 @@ public final class Feed<T> {
      * Connects to the feed's real-time stream. The connection is retried like other requests, but events
      * are never replayed once the stream is open.
      *
-     * @throws ApiException if the API refuses the connection. A 429 without {@link ApiException#retryAfter()}
-     *     means the key already has too many open streams.
+     * @throws ApiException if the API refuses the connection
      */
     public EventStream<T> stream() {
         HttpUrl url = transport.url(path + "/stream").build();

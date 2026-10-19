@@ -4,7 +4,7 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * No response arrived: the connection failed, was lost, or the calling thread was interrupted. After an
- * interruption the thread's interrupt flag is set again. The cause holds the underlying failure.
+ * interruption the thread's interrupt flag is set again.
  *
  * <p>Reading the stream returned by {@link Feed#download(String)} throws {@link java.io.IOException} instead.
  */

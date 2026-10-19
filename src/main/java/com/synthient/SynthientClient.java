@@ -37,10 +37,10 @@ import tools.jackson.databind.JsonNode;
  *
  * <p>Failed calls throw {@link ApiException} when the API answers with an error status, {@link
  * ApiConnectionException} when no response arrives, and {@link SynthientException} when the response is
- * invalid. Requests are retried after rate limits that carry a {@code Retry-After}, and account and feed
- * requests also after server errors and after connection failures and timeouts before the response arrives,
- * except TLS failures. Neither the SDK nor its HTTP client ever resends a billed lookup after a failure the
- * server may have charged for.
+ * invalid. Rate limits with a {@code Retry-After} are retried. Account and feed requests are also retried
+ * after server errors, and after connection failures and timeouts before the response arrives, except TLS
+ * failures. Neither the SDK nor OkHttp resends a billed lookup after a failure the server may have charged
+ * for.
  *
  * <p>Close the client to release its connections. A client built with a caller's {@link OkHttpClient} leaves
  * that client open.
@@ -105,9 +105,7 @@ public final class SynthientClient implements AutoCloseable {
     }
 
     /**
-     * Looks up an IP address. Costs one credit; failed lookups are free. The request is never resent after
-     * a connection failure, because the server may already have charged for it; only rate limits with a
-     * {@code Retry-After} are retried.
+     * Looks up an IP address. Costs one credit; failed lookups are free.
      *
      * @param ip an IPv4 or IPv6 address literal
      * @throws IllegalArgumentException if {@code ip} is not an address literal; no request is sent

@@ -1,6 +1,6 @@
 package com.synthient.model;
 
-/** Known values of {@link ParquetColumn#type()}. The API may add values, so code should accept others. */
+/** Known values of {@link ParquetColumn#type()}. The API may add others. */
 public final class ParquetType {
     public static final String STRING = "string";
     public static final String INT64 = "int64";

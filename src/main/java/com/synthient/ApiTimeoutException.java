@@ -3,9 +3,8 @@ package com.synthient;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Connecting took longer than the connect timeout, or the API sent nothing for longer than the client's {@link
- * SynthientClient.Builder#timeout(java.time.Duration) timeout}, either while waiting for the response headers or
- * between parts of the body.
+ * Connecting took longer than the connect timeout, or the API was silent for longer than the client's {@link
+ * SynthientClient.Builder#timeout(java.time.Duration) timeout}.
  *
  * <p>Reading the stream returned by {@link Feed#download(String)} throws {@link java.net.SocketTimeoutException}
  * instead.

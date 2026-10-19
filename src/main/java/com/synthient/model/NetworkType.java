@@ -1,6 +1,6 @@
 package com.synthient.model;
 
-/** Known values of {@link Network#type()}. The API may add values, so code should accept others. */
+/** Known values of {@link Network#type()}. The API may add others. */
 public final class NetworkType {
     public static final String MOBILE = "MOBILE";
     public static final String SATELLITE = "SATELLITE";

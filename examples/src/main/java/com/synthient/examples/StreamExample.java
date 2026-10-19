@@ -25,7 +25,7 @@ public final class StreamExample {
                         throw e;
                     }
                     System.err.println("stream: " + e);
-                    // Pause after a failure so a failing stream doesn't reconnect in a tight loop.
+                    // Avoid reconnecting in a tight loop.
                     Thread.sleep(2000);
                 }
             }

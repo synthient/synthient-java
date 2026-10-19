@@ -12,8 +12,8 @@ import org.jspecify.annotations.Nullable;
  * @param requestId the {@code X-Request-Id} header, or an empty string
  * @param rateLimit the rate limit state, or null when the response has no complete {@code RateLimit-*}
  *     headers
- * @param headers all response headers. The 307 of an export download carries the presigned URL in {@code
- *     Location}, which grants access to the file, so do not log the headers.
+ * @param headers all response headers. Do not log them: the 307 of an export download carries the
+ *     presigned URL in {@code Location}.
  */
 public record ResponseMetadata(
         int statusCode, String requestId, @Nullable RateLimit rateLimit, Headers headers) {

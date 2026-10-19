@@ -118,8 +118,8 @@ public final class GrpcSchema {
     }
 
     /**
-     * Converts an endpoint to {@code host:port} form. It accepts {@code host:port}, a bare host (port 443 is
-     * assumed), and {@code grpc://} or {@code https://} URLs. A blank endpoint means {@link #DEFAULT_ENDPOINT}.
+     * Converts an endpoint in a form {@link FetchOptions.Builder#endpoint(String)} accepts to {@code
+     * host:port}. A blank endpoint means {@link #DEFAULT_ENDPOINT}.
      *
      * @throws IllegalArgumentException if the endpoint has an invalid host, port, or scheme, or includes
      *     user info, a path other than {@code /}, a query, or a fragment

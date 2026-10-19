@@ -1,6 +1,6 @@
 package com.synthient.model;
 
-/** Known values of {@link Account#scopes()}. The API may add values, so code should accept others. */
+/** Known values of {@link Account#scopes()}. The API may add others. */
 public final class Scope {
     public static final String BASIC = "BASIC";
     public static final String PROXY_FEEDS = "PROXY_FEEDS";

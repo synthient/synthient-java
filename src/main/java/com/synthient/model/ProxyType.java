@@ -1,6 +1,6 @@
 package com.synthient.model;
 
-/** Known values of the {@code type} of {@link ProxyEvent}, {@link AnonymizerEvent}, and {@link Ja4tEvent}. The API may add values, so code should accept others. */
+/** Known values of the {@code type} of {@link ProxyEvent}, {@link AnonymizerEvent}, and {@link Ja4tEvent}. The API may add others. */
 public final class ProxyType {
     public static final String FREE_VPN = "FREE_VPN";
     public static final String COMMERCIAL_VPN = "COMMERCIAL_VPN";
