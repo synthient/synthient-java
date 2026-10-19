@@ -46,7 +46,7 @@
 
 ## SDK Installation
 
-Add `com.synthient:synthient-java` to your build. The [gRPC schema fetcher](#grpc-schema) is a separate artifact, `com.synthient:synthient-java-grpcschema`, so add it only if you need it, with the same version.
+Add `com.synthient:synthient-java` to your build. The [gRPC schema fetcher](#grpc-schema) is a separate artifact, `com.synthient:synthient-java-grpcschema`, with the same version.
 
 ### Gradle (Kotlin DSL)
 
@@ -86,17 +86,19 @@ dependencies {
 
 ## Requirements
 
-Java 21 or later. The SDK depends on OkHttp 5 and Jackson 3, plus the JSpecify annotations. The `synthient-java-grpcschema` artifact also depends on gRPC and protobuf, which your application pulls in only if it adds that artifact.
+Java 21 or later. The SDK depends on OkHttp 5, Jackson 3, and the JSpecify annotations.
 
 ## API Keys
 
-Every request to the HTTP API needs a Synthient API key. Keys are issued from the Synthient dashboard; if you don't have one yet, [contact us](mailto:contact@synthient.com). Each key carries scopes that decide what it can call. `BASIC` covers the lookups and `account()`, and each feed has one scope for its real-time stream and one for its exports, listed under [Feeds](#feeds). See [Authentication](https://docs.synthient.com/authentication) for how scopes work.
+Every request needs a Synthient API key. Keys are issued from the Synthient dashboard; if you don't have one, [contact us](mailto:contact@synthient.com). A key's scopes decide what it can call: `BASIC` covers the lookups and `account()`, and each feed has its own scopes, listed under [Feeds](#feeds).
 
-If a request fails even though you are sending a key, it is usually one of these:
+If a request fails even though you are sending a key:
 
-- **401 Unauthorized**: the key is malformed, unknown, or revoked. Check that it was loaded from the environment and isn't truncated.
-- **402 Payment Required**: the team is out of lookup credits. `account()` reports the remaining balance and when it resets.
-- **403 Forbidden**: the key lacks the scope for that endpoint or feed. `account()` lists the key's scopes.
+- **401 Unauthorized**: the key is malformed, unknown, or revoked.
+- **402 Payment Required**: the team is out of lookup credits.
+- **403 Forbidden**: the key lacks the scope for that endpoint or feed.
+
+`account()` shows the key's scopes and the team's remaining credits.
 
 ## Authentication
 
@@ -106,19 +108,19 @@ This SDK supports the following security scheme:
 | -------- | ------- | ------------------ | -------------------- |
 | `apiKey` | API key | `x-api-key` header | `SYNTHIENT_API_KEY`  |
 
-`new SynthientClient()` reads the key from `SYNTHIENT_API_KEY`. To pass it yourself, for example from a secret manager, use the constructor that takes a key or `apiKey` on the builder:
+`new SynthientClient()` reads the key from `SYNTHIENT_API_KEY`. To pass it yourself, such as from a secret manager, use the constructor that takes a key or `apiKey` on the builder:
 
 ```java
 SynthientClient client = new SynthientClient(apiKey);
 ```
 
-Creating a client throws `IllegalArgumentException` if the key is blank or not printable ASCII, or if no key is passed and `SYNTHIENT_API_KEY` is unset. A null key throws `NullPointerException`. Creating a client makes no network calls, so an invalid key shows up as a 401 on the first request. The key is sent only to the Synthient API, never to the storage host that serves export downloads.
+Creating a client makes no network calls. To check a key, call `account()`, which costs no credits.
 
 ## SDK Example Usage
 
 ### Look up an IP address
 
-Get the network, location, and risk intelligence for an IPv4 or IPv6 address. Each lookup costs one credit, and failed lookups are free.
+Get the network, location, and risk intelligence for an IPv4 or IPv6 address. Each lookup costs one credit; failed lookups are free.
 
 ```java
 import com.synthient.SynthientClient;
@@ -138,11 +140,11 @@ public class LookupIp {
 }
 ```
 
-`network()`, `location()`, and `intelligence()` return null when the API has no data for that section, so check them before reading their fields. A client is safe for concurrent use and holds a connection pool, so create one, reuse it across your application, and close it on shutdown. The examples below reuse `client`. Runnable programs are in [examples](examples/src/main/java/com/synthient/examples), for example `./gradlew -q :examples:lookupIp --args=8.8.8.8`.
+`network()`, `location()`, and `intelligence()` return null when the API has no data for them. A client is safe for concurrent use, so reuse one and close it on shutdown. The examples below reuse `client`, and runnable programs are in [examples](examples/src/main/java/com/synthient/examples).
 
 ### Look up many IP addresses
 
-Look up as many as 1000 addresses in one request, billed at `ceil(n * 0.9)` credits for the `n` distinct addresses looked up. Private and reserved addresses are skipped and duplicates collapse into one result, so match results by `ip()` rather than by index.
+Look up as many as 1000 addresses in one request for `ceil(n * 0.9)` credits. Private and reserved addresses are skipped and duplicates are merged, so match results by `ip()`.
 
 ```java
 List<IpInfo> results = client.lookupIps(List.of("8.8.8.8", "1.1.1.1"));
@@ -156,7 +158,7 @@ for (IpInfo result : results) {
 
 ### Look up a domain
 
-Get the honeypot traffic observed for a domain, with its most recent events. A domain that has never been observed returns an inactive status and zero counts rather than an error. Each lookup costs one credit.
+Get the honeypot traffic observed for a domain and its most recent events. Each lookup costs one credit.
 
 ```java
 DomainInfo domain = client.lookupDomain("example.com", 10);
@@ -168,7 +170,7 @@ for (DomainEvent event : domain.recentEvents()) {
 
 ### Check your account
 
-Get the account that owns the API key, with the key's scopes and the team's remaining lookup credits. It costs no credits.
+Get the key's account, scopes, and remaining lookup credits, at no cost.
 
 ```java
 Account account = client.account();
@@ -185,7 +187,7 @@ System.out.println(account.organization().name() + " " + account.scopes() + " " 
 - [`lookupIp`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/SynthientClient.html#lookupIp(java.lang.String)) - Look up an IPv4 or IPv6 address
 - [`lookupIps`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/SynthientClient.html#lookupIps(java.util.Collection)) - Look up as many as 1000 addresses in one request
 - [`lookupDomain`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/SynthientClient.html#lookupDomain(java.lang.String,int)) - Look up the honeypot traffic observed for a domain
-- [`account`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/SynthientClient.html#account()) - Get the account that owns the API key, the key's scopes, and the team's remaining lookup credits
+- [`account`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/SynthientClient.html#account()) - Get the key's account, scopes, and remaining lookup credits
 - [`health`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/SynthientClient.html#health()) - Check that the API and its dependencies are healthy
 
 ### [Feeds](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/Feed.html)
@@ -214,7 +216,7 @@ Each feed comes from a method of the client, such as `client.proxies()`, and has
 
 ## Streaming
 
-`stream()` connects to a feed's real-time events and returns an `EventStream`, which you iterate over and close to disconnect. The server keeps a stream open for up to 30 minutes and then closes it, which ends the loop without an exception. The API has no resume cursor, so connect again to continue:
+`stream()` connects to a feed's real-time events and returns an `EventStream`, which you iterate over and close to disconnect:
 
 ```java
 while (true) {
@@ -227,17 +229,20 @@ while (true) {
             throw e;
         }
         System.err.println("proxy stream: " + e);
-        // Pause after a failure so a failing stream doesn't reconnect in a tight loop.
+        // Avoid reconnecting in a tight loop.
         Thread.sleep(2000);
     }
 }
 ```
 
-The loop stops on a 401 or 403, because reconnecting can't fix a rejected key or a missing scope. After any other failure it waits 2 seconds before reconnecting, and after the server's routine close it reconnects at once. When the API refuses a connection, `stream()` throws an `ApiException`, and a 429 without `retryAfter()` means the key already has too many open streams. Once connected, a lost connection throws `ApiConnectionException` and an event that can't be decoded throws `SynthientException`, and either ends the stream. Closing the stream from another thread ends a blocked read.
+- The server closes each stream after up to 30 minutes. That ends the inner loop without an exception, and the outer loop reconnects at once.
+- A 401 or 403 stops the loop, because reconnecting can't fix a rejected key or a missing scope.
+- Any other failure ends the stream, and the loop waits 2 seconds before reconnecting.
+- Events sent while disconnected are missed. The API has no resume cursor.
 
 ## Pagination
 
-`listExports(limit, cursor)` returns one page of a feed's exports, newest first. `listExports()` returns the first page at the API's default size of 100:
+`listExports(limit, cursor)` returns one page of a feed's exports, newest first. Pass `page.nextCursor()` as the cursor to get the next page; it is null on the last one.
 
 ```java
 ExportPage page = client.proxies().listExports(50, null);
@@ -246,7 +251,7 @@ for (Export export : page.exports()) {
 }
 ```
 
-To get the next page, pass `page.nextCursor()` as the cursor. It is null on the last page. `allExports()` does the paging for you. It fetches pages as the loop needs them and stops fetching when the loop breaks:
+`allExports()` fetches the pages for you as the loop needs them:
 
 ```java
 for (Export export : client.proxies().allExports()) {
@@ -254,13 +259,11 @@ for (Export export : client.proxies().allExports()) {
 }
 ```
 
-A page that fails to load throws from the loop. Each new loop over the same `Iterable` starts again from the first page.
-
-On the first page, the newest hourly export has the ID `latest`, a moving alias for the freshest export. To keep a stable ID, build it from the export's `date()` and `hour()`, such as `2026-10-14/21`.
+On the first page, the newest hourly export has the ID `latest`, a moving alias for the freshest export. Its `date()` and `hour()` give its stable ID, such as `2026-10-14/21`.
 
 ## Downloads
 
-Exports are Parquet files. Identify one by the `id()` of an `Export` from a listing, by `ExportId.LATEST` for the freshest one, or by `ExportId.daily(date)` or `ExportId.hourly(date, hour)` for a UTC day or hour. `download` returns the file's contents as an `InputStream`, which you must close. Reading it throws an `IOException`, not an SDK exception, if the transfer stalls or drops, and the transfer is not retried:
+Exports are Parquet files. `download` returns a file's contents as an `InputStream`, which you must close:
 
 ```java
 try (InputStream body = client.proxies().download(ExportId.LATEST)) {
@@ -268,20 +271,23 @@ try (InputStream body = client.proxies().download(ExportId.LATEST)) {
 }
 ```
 
-The file comes from a presigned storage URL that is requested without your API key. `exportMeta` returns the SHA-256 checksum to verify it against. Use the same dated ID for both calls, such as `ExportId.hourly(date, hour)`, because `latest` can move to a newer export in between. `downloadUrl` returns the presigned URL itself for tools that read Parquet over HTTPS. The URL grants access without a key for 24 hours, so treat it as a secret.
-
-An hourly export is available until its day's daily export is rolled up, shortly after 00:30 UTC the next day. After that, requests for the hour return a 400. While a daily export is being rolled up, requests for it return a 404 with `retryAfter()` set.
+- Name an export by its `id()` from a listing, by `ExportId.LATEST`, or by `ExportId.daily(date)` or `ExportId.hourly(date, hour)` for a UTC day or hour.
+- `exportMeta` returns the file's SHA-256 checksum. Use a fixed ID for both calls, because `latest` can move between them.
+- `downloadUrl` returns a presigned URL that works without a key for 24 hours, so treat it as a secret. Your API key is never sent to the storage host.
+- Hourly exports roll into the daily export shortly after 00:30 UTC the next day. After that, the hour returns a 400.
 
 ## Retries
 
-The client retries a failed request up to twice by default, backing off exponentially with jitter and honoring `Retry-After`:
+The client retries a failed request up to twice, backing off exponentially with jitter and honoring `Retry-After`:
 
-- Account and feed requests are retried on 500, 502, 503, and 504 responses, on 429 responses that carry `Retry-After`, and on connection failures and timeouts that happen before the response arrives. TLS errors are not retried, and neither is a failure while reading a response body, stream, or download, or a download's transfer from storage.
-- Billed lookups (`lookupIp`, `lookupIps`, and `lookupDomain`) are retried only on 429 responses that carry `Retry-After`, which the rate limiter returns before doing any work, so a lookup is never charged twice. OkHttp is configured so it never resends one on its own either. `health()` is retried the same way, so an unhealthy API is reported at once.
+| Requests                      | Retried on                                                                                   |
+| ----------------------------- | -------------------------------------------------------------------------------------------- |
+| Account and feed requests     | 500, 502, 503, and 504, most connection failures and timeouts, and 429 with `Retry-After`    |
+| Billed lookups and `health()` | Only 429 with `Retry-After`, which comes before any work, so a lookup is never charged twice |
 
-A 429 without `Retry-After` means the key's monthly request budget is spent or it has too many open streams, so it is thrown without a retry. A `Retry-After` longer than a minute is thrown to you instead of waited out. A stream's connection is retried like any feed request, but events are never replayed once it is open.
+A 429 without `Retry-After` means the monthly request budget is spent or too many streams are open, so it is thrown at once. Downloads from the storage host are never retried.
 
-To change the number of retries, set `maxRetries` on the builder. Zero disables retries:
+Set the number of retries with `maxRetries` on the builder. Zero disables them:
 
 ```java
 SynthientClient client = SynthientClient.builder()
@@ -291,7 +297,7 @@ SynthientClient client = SynthientClient.builder()
 
 ## Timeouts
 
-The client sets an idle timeout rather than an overall one, because streams and downloads are long-lived. It bounds how long the client waits for the response headers, and then for each part of the body, so a stream or download runs for as long as data keeps arriving. The default is 60 seconds:
+The client sets an idle timeout rather than an overall one, because streams and downloads are long-lived. It limits each wait for the response headers and then for each part of the body, 60 seconds by default:
 
 ```java
 SynthientClient client = SynthientClient.builder()
@@ -299,25 +305,25 @@ SynthientClient client = SynthientClient.builder()
         .build();
 ```
 
-When it runs out, the call throws `ApiTimeoutException`, after any retries for account and feed requests. Reading a download's `InputStream` throws a plain `IOException` instead, such as `java.net.SocketTimeoutException`. The server sends a heartbeat line on every stream every 15 seconds, so keep the timeout above that if you use streams. Connecting has its own timeout of 10 seconds, or your `OkHttpClient`'s if you pass one, and running out of it also throws `ApiTimeoutException`.
-
-To stop a call that is waiting for its response or for a retry, interrupt its thread. The call throws `ApiConnectionException` and the thread's interrupt flag stays set. A stream or download that is already reading may not notice an interrupt until more data arrives, so close it from another thread instead.
+- When it runs out, the call throws `ApiTimeoutException`. Reading a download throws a plain `IOException` instead.
+- Streams get a keepalive line about every 15 seconds, so keep the timeout above that.
+- To cancel a call that is waiting for a response or a retry, interrupt its thread. To stop a stream or download that is already reading, close it from another thread.
 
 ## Error Handling
 
-A request that fails with a non-success HTTP status throws an [`ApiException`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/ApiException.html). It has the following methods:
+A request that fails with a non-success status throws an [`ApiException`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/ApiException.html):
 
-| Method         | Type                        | Description                                                                                 |
-| -------------- | --------------------------- | ------------------------------------------------------------------------------------------- |
-| `statusCode()` | `int`                       | HTTP response status code, such as `404`                                                    |
-| `type()`       | `String`                    | URI identifying the problem type, such as `https://docs.synthient.com/errors/validation-failed` |
-| `title()`      | `String`                    | Short summary of the problem type                                                           |
-| `detail()`     | `String`                    | Explanation of this occurrence. For a plain-text error, the response body                   |
-| `errors()`     | `Map<String, List<String>>` | Validation messages by request field                                                        |
-| `requestId()`  | `String`                    | Request ID to give Synthient support                                                        |
-| `retryAfter()` | `Duration`                  | How long the server asked you to wait before retrying, or null                              |
+| Method         | Type                        | Description                                    |
+| -------------- | --------------------------- | ---------------------------------------------- |
+| `statusCode()` | `int`                       | HTTP status code, such as `404`                |
+| `type()`       | `String`                    | URI identifying the problem type               |
+| `title()`      | `String`                    | Short summary of the problem type              |
+| `detail()`     | `String`                    | Explanation of this occurrence                 |
+| `errors()`     | `Map<String, List<String>>` | Validation messages by request field           |
+| `requestId()`  | `String`                    | Request ID to give Synthient support           |
+| `retryAfter()` | `Duration`                  | How long the server asked you to wait, or null |
 
-The string methods return an empty string when the response has no value. `getMessage()` holds only the HTTP status, such as `403 Forbidden`, so the exception is safe to log. The server's explanation is in `detail()`.
+`getMessage()` holds only the HTTP status, such as `403 Forbidden`, so the exception is safe to log. The string methods return an empty string when the response has no value.
 
 ### Example
 
@@ -339,27 +345,27 @@ try {
 
 Every exception the SDK throws is unchecked. Reading a download's `InputStream` can also throw `IOException`.
 
-- [`SynthientException`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/SynthientException.html): the parent of every exception the SDK throws for a failed call. Thrown directly, it means the API sent a response the SDK could not use, such as invalid JSON.
-  - [`ApiException`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/ApiException.html): the API returned a non-success status.
-  - [`ApiConnectionException`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/ApiConnectionException.html): no response arrived, because the connection failed or was lost, or the calling thread was interrupted.
-    - [`ApiTimeoutException`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/ApiTimeoutException.html): connecting took longer than the connect timeout, or the API sent nothing for longer than the client's timeout.
-- `IllegalArgumentException`: an argument was invalid, such as an address that is not an IP literal, an invalid export ID, or a missing API key. No request is sent.
-- `IllegalStateException`: the client was closed, or an `EventStream` was iterated a second time.
+- [`SynthientException`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/SynthientException.html): the parent of the SDK's own exceptions. Thrown on its own, it means the API sent a response the SDK could not use.
+  - [`ApiException`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/ApiException.html): the API, or the storage host during `download`, returned a non-success status.
+  - [`ApiConnectionException`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/ApiConnectionException.html): no response arrived, because the connection failed or was lost, or the thread was interrupted.
+    - [`ApiTimeoutException`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/ApiTimeoutException.html): connecting took too long, or the API was silent for longer than the timeout.
+- `IllegalArgumentException`: an argument is invalid, such as a malformed address or export ID or a missing API key. No request is sent.
+- `IllegalStateException`: the client was closed, or an `EventStream` was iterated twice.
 
 <details><summary>Status codes</summary>
 
 <br />
 
-| Status | Meaning                                                                                                            |
-| ------ | ------------------------------------------------------------------------------------------------------------------ |
-| 400    | The request is invalid, such as asking for an hourly export that has been rolled up                                |
-| 401    | The API key is malformed, unknown, or revoked                                                                      |
-| 402    | The team is out of lookup credits                                                                                  |
-| 403    | The key lacks the scope for the endpoint or feed                                                                   |
-| 404    | The export does not exist, or a daily export is still being rolled up and `retryAfter()` is set                    |
-| 422    | The input is invalid, such as a private or reserved address, a malformed domain, or a batch with no usable address |
-| 429    | With `retryAfter()`, the rate limit was hit. Without it, the request budget is spent or too many streams are open  |
-| 5xx    | The server failed. Account and feed requests are retried on 500, 502, 503, and 504                                 |
+| Status | Meaning                                                                                           |
+| ------ | ------------------------------------------------------------------------------------------------- |
+| 400    | The request is invalid, such as an hourly export that was rolled up                               |
+| 401    | The API key is malformed, unknown, or revoked                                                     |
+| 402    | The team is out of lookup credits                                                                 |
+| 403    | The key lacks the scope for the endpoint or feed                                                  |
+| 404    | The export doesn't exist, or a daily export is still rolling up (`retryAfter()` is set)           |
+| 422    | The input is invalid, such as a private address or a malformed domain                             |
+| 429    | Rate limited if `retryAfter()` is set; otherwise the budget is spent or too many streams are open |
+| 5xx    | The server failed                                                                                 |
 
 </details>
 
@@ -367,7 +373,7 @@ Every exception the SDK throws is unchecked. Reading a download's `InputStream` 
 
 ### Override Server URL Per-Client
 
-The default server is `https://api.synthient.com/api/v4`. To send requests elsewhere, such as through a gateway or to a mock server in tests, set `baseUrl` on the builder. The URL includes the version path:
+The default server is `https://api.synthient.com/api/v4`. Use `baseUrl` on the builder to send requests elsewhere, such as a mock server in tests:
 
 ```java
 SynthientClient client = SynthientClient.builder()
@@ -377,7 +383,7 @@ SynthientClient client = SynthientClient.builder()
 
 ## Custom HTTP Client
 
-The client sends requests with [OkHttp](https://square.github.io/okhttp/). Pass your own `OkHttpClient` to `httpClient` on the builder, for example to route requests through a proxy:
+Pass your own [OkHttp](https://square.github.io/okhttp/) `OkHttpClient` to `httpClient` on the builder, for example to use a proxy:
 
 ```java
 OkHttpClient okHttp = new OkHttpClient.Builder()
@@ -389,13 +395,15 @@ SynthientClient client = SynthientClient.builder()
         .build();
 ```
 
-The SDK derives its own client from yours. It shares your connection pool, proxy, TLS settings, interceptors, and connect timeout, but uses its own dispatcher and read and write timeouts, and no call timeout. It never caches responses or follows the API's redirects, so your API key never reaches the export storage host, and it never lets OkHttp resend a request, so a billed lookup is never sent twice. Redirects within export storage are followed, but never from https to http. Closing the SDK client leaves yours open.
+- The SDK uses your connection pool, proxy, TLS settings, interceptors, and connect timeout, but sets its own read and write timeouts and no call timeout.
+- It never lets OkHttp resend a request, so a billed lookup is never sent twice.
+- Closing the SDK client leaves yours open.
 
-To identify your application, `userAgent("my-app/1.2")` on the builder appends a product token to the `User-Agent` header.
+`userAgent("my-app/1.2")` on the builder adds your product token to the `User-Agent` header.
 
 ## Debugging
 
-`responseHook` on the builder sets a function that is called after every API response arrives, including each retry, page, and stream connection. It receives a `ResponseMetadata` with the status code, the request ID to give Synthient support, the operation's rate limit, and the response headers:
+`responseHook` on the builder calls a function after every API response, including retries, pages, and stream connections, with the status, request ID, rate limit, and headers:
 
 ```java
 SynthientClient client = SynthientClient.builder()
@@ -409,14 +417,14 @@ SynthientClient client = SynthientClient.builder()
         .build();
 ```
 
-The hook runs on the calling thread and must be safe for concurrent use. An exception it throws fails the call. Storage download responses are not passed to it.
+The hook must be safe for concurrent use, and an exception it throws fails the call.
 
 > [!WARNING]
-> Response headers can contain secrets, such as the presigned URL in an export download's `Location` header. Avoid logging `meta.headers()` in production. `ResponseMetadata.toString()` leaves the headers out.
+> Response headers can contain secrets, such as presigned download URLs. Avoid logging `meta.headers()` in production. `ResponseMetadata.toString()` leaves them out.
 
 ## gRPC Schema
 
-The [`synthient-java-grpcschema`](https://javadoc.io/doc/com.synthient/synthient-java-grpcschema) artifact fetches the protobuf schema of the [Synthient gRPC API](https://docs.synthient.com/grpc) through gRPC server reflection:
+The [`synthient-java-grpcschema`](https://javadoc.io/doc/com.synthient/synthient-java-grpcschema) artifact fetches the protobuf schema of the [Synthient gRPC API](https://docs.synthient.com/grpc) through server reflection:
 
 ```java
 try {
@@ -430,13 +438,13 @@ try {
 }
 ```
 
-`schema.descriptorSet()` is a protobuf `FileDescriptorSet` with each file after the files it imports. `GrpcSchema.explain` describes common gRPC errors in plain language, and returns an empty string for the rest. To fetch from another endpoint, resolve specific symbols, or change the 30-second deadline, pass `FetchOptions` to `GrpcSchema.fetch`.
+`schema.descriptorSet()` is a protobuf `FileDescriptorSet`. `GrpcSchema.explain` describes common gRPC errors in plain language.
 
 # Development
 
 ## Maturity
 
-This SDK follows [Semantic Versioning](https://semver.org). Breaking changes to its public API ship only in a new major version. The one exception is the model records, which gain components in minor releases as the API adds fields, so their constructors and record patterns can change. `synthient-java` and `synthient-java-grpcschema` are released together with the same version.
+This SDK follows [Semantic Versioning](https://semver.org). Breaking changes ship only in a new major version, except that model records gain components in minor releases as the API adds fields, which can change their constructors and record patterns.
 
 ## Contributions
 
