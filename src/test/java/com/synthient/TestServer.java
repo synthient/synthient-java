@@ -20,7 +20,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-/** A loopback HTTP server that records every request and answers with a handler. */
 final class TestServer implements AutoCloseable {
     static final String API_KEY = "test-key";
 
@@ -108,7 +107,6 @@ final class TestServer implements AutoCloseable {
         return failure.get(5, TimeUnit.SECONDS);
     }
 
-    /** Returns a local port that nothing listens on. */
     static int closedPort() throws IOException {
         try (ServerSocket socket = new ServerSocket(0)) {
             return socket.getLocalPort();

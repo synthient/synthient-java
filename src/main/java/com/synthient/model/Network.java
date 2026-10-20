@@ -8,8 +8,6 @@ import org.jspecify.annotations.Nullable;
 /**
  * The network an IP address belongs to.
  *
- * @param asn the autonomous system number
- * @param isp the internet service provider
  * @param type the kind of network, one of {@link NetworkType}
  * @param org the organization, or null when unknown
  * @param domain the organization's domain, or null when unknown

@@ -6,33 +6,13 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * A parsed TLS ClientHello. Fields the sensor could not parse are absent, and new fields may appear.
+ * Each boolean field other than {@code hasGrease} says whether the ClientHello carried that extension.
  *
- * @param recordVersion the record layer version
- * @param handshakeVersion the handshake version
  * @param clientRandom the hex client random
  * @param sessionId the hex session ID
  * @param sessionIdLength the session ID length in bytes
- * @param sni the server name indication
- * @param cipherSuites the offered cipher suites
- * @param compressionMethods the offered compression methods
  * @param extensions the extensions in wire order
- * @param supportedGroups the supported groups
- * @param signatureAlgorithms the signature algorithms
- * @param alpn the application protocols
- * @param supportedVersions the supported TLS versions
- * @param ecPointFormats the elliptic curve point formats
- * @param keyShareGroups the key share groups
- * @param pskKeyExchangeModes the pre-shared key exchange modes
  * @param compressCertificate the certificate compression algorithms
- * @param hasGrease whether GREASE values were present
- * @param applicationSettings whether the application settings extension was present
- * @param delegatedCredentials whether the delegated credentials extension was present
- * @param encryptThenMac whether the encrypt-then-MAC extension was present
- * @param extendedMasterSecret whether the extended master secret extension was present
- * @param postHandshakeAuth whether the post-handshake authentication extension was present
- * @param renegotiationInfo whether the renegotiation info extension was present
- * @param signedCertificateTimestamps whether the signed certificate timestamps extension was present
- * @param statusRequest whether the status request extension was present
  */
 public record TlsClientHello(
         @JsonProperty("record_version") @Nullable String recordVersion,

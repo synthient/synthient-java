@@ -9,7 +9,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * @param session the hex session ID
  * @param sequentialId the command's position in the session, starting at 1
- * @param command the command text
  * @param hash a hex SHA-256 shared by every command in the session
  */
 public record HeliosAdbEvent(

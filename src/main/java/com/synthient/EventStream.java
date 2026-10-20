@@ -29,8 +29,6 @@ import org.jspecify.annotations.Nullable;
  *
  * <p>{@link #iterator()} may be called once. {@link #close()} may be called from another thread, which ends
  * the iteration.
- *
- * @param <T> the event type
  */
 public final class EventStream<T> implements Iterable<T>, Closeable {
     private static final int MAX_EVENT_SIZE = 16 << 20;
@@ -48,7 +46,7 @@ public final class EventStream<T> implements Iterable<T>, Closeable {
     }
 
     /**
-     * Returns the events of the stream. Reading blocks until the server sends the next event.
+     * Reading blocks until the server sends the next event.
      *
      * @throws IllegalStateException if called more than once
      */
@@ -132,7 +130,7 @@ public final class EventStream<T> implements Iterable<T>, Closeable {
         return true;
     }
 
-    /** Disconnects from the feed. Safe to call more than once and from any thread. */
+    /** Safe to call more than once and from any thread. */
     @Override
     public void close() {
         closed = true;

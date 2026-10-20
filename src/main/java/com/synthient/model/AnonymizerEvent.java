@@ -11,11 +11,8 @@ import org.jspecify.annotations.Nullable;
  *
  * @param rangeStart the first address of the range
  * @param rangeEnd the last address of the range
- * @param provider the service provider
  * @param type the kind of service, one of {@link ProxyType}
- * @param timestamp when the range was seen
- * @param countryCode the country of the range
- * @param asn the autonomous system number of the range
+ * @param countryCode the ISO 3166-1 alpha-2 country code of {@code rangeStart}
  */
 public record AnonymizerEvent(
         @JsonProperty("range_start") @Nullable String rangeStart,

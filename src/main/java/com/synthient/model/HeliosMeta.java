@@ -8,8 +8,6 @@ import org.jspecify.annotations.Nullable;
  *
  * @param proxyIp the proxy's exit address
  * @param server the honeypot server that received the request
- * @param poolId the proxy pool
- * @param provider the proxy provider
  */
 public record HeliosMeta(
         @JsonProperty("proxy_ip") @Nullable String proxyIp,

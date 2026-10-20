@@ -11,12 +11,10 @@ import org.jspecify.annotations.Nullable;
 /**
  * A TLS handshake received by a Helios honeypot through a proxy.
  *
- * @param timestamp when the handshake was received
  * @param tunnelId the proxy tunnel, an unsigned 64-bit value that can exceed {@code Long.MAX_VALUE}
  * @param domain the tunnel's destination domain
  * @param port the tunnel's destination port
  * @param protocol {@code https}
- * @param meta the proxy the handshake came through
  * @param details the parsed ClientHello, or null when the sensor could not parse it
  * @param raw always null: the HTTPS sensors do not capture handshake bytes
  */

@@ -14,10 +14,7 @@ import org.jspecify.annotations.Nullable;
  * @param kind whether the export covers an hour or a day, one of {@link ExportKind}
  * @param date the day the export covers, in UTC
  * @param hour the hour the export covers, or null for a daily export
- * @param sizeBytes the file size in bytes
- * @param rowCount the number of rows
  * @param checksum the hex SHA-256 of the file
- * @param createdAt when the export was written
  * @param downloadPath the API path that redirects to the file
  */
 public record Export(

@@ -40,7 +40,6 @@ public class ApiException extends SynthientException {
     /**
      * Creates an API exception, for example to stub the SDK in tests.
      *
-     * @param statusCode the HTTP status
      * @param type the problem type URI, or empty
      * @param title the problem title, or empty
      * @param detail the problem detail, or empty
@@ -91,7 +90,6 @@ public class ApiException extends SynthientException {
                 readFailure);
     }
 
-    /** Parses a JSON object, returning a missing node for anything else. */
     private static JsonNode parseObject(byte[] body) {
         try {
             JsonNode node = Json.MAPPER.readTree(body);
@@ -147,7 +145,6 @@ public class ApiException extends SynthientException {
         return reason.isEmpty() ? String.valueOf(statusCode) : statusCode + " " + reason;
     }
 
-    /** Returns the HTTP status. */
     public int statusCode() {
         return statusCode;
     }

@@ -9,8 +9,6 @@ import java.time.Instant;
  * A proxy or VPN provider seen using an IP address.
  *
  * @param name the provider name, sent as {@code provider}
- * @param type the kind of service
- * @param lastSeen when the provider was last seen using the address
  */
 public record Provider(
         @JsonProperty("provider") String name,

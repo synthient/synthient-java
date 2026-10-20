@@ -40,7 +40,6 @@ import java.util.concurrent.TimeUnit;
  * }
  */
 public final class GrpcSchema {
-    /** The address of the Synthient gRPC API. */
     public static final String DEFAULT_ENDPOINT = "grpc.synthient.com:443";
 
     private static final int MAX_MESSAGE_SIZE = 32 << 20;

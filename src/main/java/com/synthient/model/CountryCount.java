@@ -4,13 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * Events from one source country.
- *
- * @param countryCode the country code
- * @param uniqueIps unique source IPs from it
- * @param events events from it
- */
+/** Events from one source country. */
 public record CountryCount(
         @JsonProperty("country_code") String countryCode,
         @JsonProperty(value = "unique_ips", required = true) long uniqueIps,

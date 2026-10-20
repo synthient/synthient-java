@@ -8,7 +8,6 @@ import tools.jackson.databind.cfg.CoercionInputShape;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.type.LogicalType;
 
-/** The JSON mapper shared by every client. It is immutable and safe for concurrent use. */
 final class Json {
     /**
      * Rejects values of the wrong JSON type, such as {@code "15169"} for a number or {@code 15169} for a
@@ -26,11 +25,7 @@ final class Json {
 
     private Json() {}
 
-    /**
-     * Decodes a JSON object into a model.
-     *
-     * @throws SynthientException if the body is not a valid instance of the model
-     */
+    /** @throws SynthientException if the body is not a valid instance of the model */
     static <T> T decode(byte[] body, Class<T> type) {
         T value;
         try {

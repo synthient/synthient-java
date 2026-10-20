@@ -9,8 +9,6 @@ import java.time.Instant;
  * Event counts for one day.
  *
  * @param date the start of the day in UTC
- * @param events events that day
- * @param uniqueIps unique source IPs that day
  */
 public record TimeSeriesPoint(
         @JsonProperty("date") Instant date,

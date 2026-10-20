@@ -9,10 +9,6 @@ import org.jspecify.annotations.Nullable;
 /**
  * The account that owns the API key.
  *
- * @param firstName the account holder's first name
- * @param lastName the account holder's last name
- * @param email the account holder's email
- * @param organization the organization the key belongs to
  * @param scopes the scopes the key grants, each one of {@link Scope}
  * @param lookupQuota the organization's lookup credits
  * @param apiKey the key used for the request, or null when the API omits it

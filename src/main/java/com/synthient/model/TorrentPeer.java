@@ -6,9 +6,6 @@ import org.jspecify.annotations.Nullable;
 /**
  * A peer seen sharing a torrent.
  *
- * @param ip the peer's address
- * @param port the peer's port
- * @param encrypted whether the peer used an encrypted connection
  * @param source where the peer was found: DHT, PEX, or a tracker
  */
 public record TorrentPeer(

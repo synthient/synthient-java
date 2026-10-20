@@ -10,7 +10,6 @@ import java.time.Instant;
  *
  * @param os the operating system, one of {@link OperatingSystem}
  * @param version the operating system version
- * @param lastSeen when the device was last seen
  */
 public record Device(
         @JsonProperty("os") String os,

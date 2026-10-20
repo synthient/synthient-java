@@ -7,12 +7,8 @@ import org.jspecify.annotations.Nullable;
 /**
  * An event from the proxies feed. Every field may be absent.
  *
- * @param ip the proxy's address
- * @param provider the proxy provider
  * @param type the kind of service, one of {@link ProxyType}
- * @param timestamp when the proxy was seen
- * @param countryCode the country of the address
- * @param asn the autonomous system number of the address
+ * @param countryCode the ISO 3166-1 alpha-2 country code of the address
  */
 public record ProxyEvent(
         @JsonProperty("ip") @Nullable String ip,

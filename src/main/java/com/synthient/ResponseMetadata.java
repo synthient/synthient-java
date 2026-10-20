@@ -8,7 +8,6 @@ import org.jspecify.annotations.Nullable;
 /**
  * Metadata of one API response, passed to the {@link SynthientClient.Builder#responseHook response hook}.
  *
- * @param statusCode the HTTP status
  * @param requestId the {@code X-Request-Id} header, or an empty string
  * @param rateLimit the rate limit state, or null when the response has no complete {@code RateLimit-*}
  *     headers

@@ -11,14 +11,11 @@ import org.jspecify.annotations.Nullable;
 /**
  * An HTTP request received by a Helios honeypot through a proxy.
  *
- * @param timestamp when the request was received
  * @param tunnelId the proxy tunnel, an unsigned 64-bit value that can exceed {@code Long.MAX_VALUE}
  * @param domain the tunnel's destination domain
  * @param port the tunnel's destination port
  * @param protocol {@code http}
- * @param meta the proxy the request came through
- * @param details the parsed request, or null when absent
- * @param raw the raw request bytes as base64, or null when absent
+ * @param raw the raw request bytes as base64
  */
 public record HeliosHttpEvent(
         @JsonProperty("timestamp") @JsonFormat(without = JsonFormat.Feature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS)

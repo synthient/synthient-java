@@ -230,7 +230,6 @@ public final class Feed<T> {
         throw new IllegalArgumentException("invalid export ID \"" + id + "\"");
     }
 
-    /** Rejects a redirect that carries user info or downgrades from https to http. */
     static void checkRedirect(HttpUrl from, HttpUrl target) {
         if (!target.username().isEmpty() || !target.password().isEmpty()) {
             throw new SynthientException("export redirect has an unsupported location");

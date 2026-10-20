@@ -9,7 +9,6 @@ import java.time.Duration;
  * An organization's lookup credits.
  *
  * @param credits the credits remaining
- * @param resetsIn the time until the credits reset
  */
 public record LookupQuota(
         @JsonProperty(value = "credits", required = true) long credits,

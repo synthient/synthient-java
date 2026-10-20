@@ -60,12 +60,12 @@ final class Transport {
         RATE_LIMIT
     }
 
-    /** Waits between attempts; replaced in tests. */
+    /** Lets tests replace the wait between attempts. */
     interface Sleeper {
         void sleep(Duration duration) throws InterruptedException;
     }
 
-    /** The status, headers, and unread body of one HTTP response. The body can be closed from any thread. */
+    /** The body is unread and can be closed from any thread. */
     record RawResponse(int statusCode, Headers headers, HttpUrl url, InputStream body) {}
 
     private final OkHttpClient http;
@@ -80,8 +80,8 @@ final class Transport {
     private final AtomicBoolean closed = new AtomicBoolean();
 
     /**
-     * Creates a transport on its own OkHttp client or on one derived from a borrowed client. Either way the
-     * transport owns the dispatcher, which runs calls on virtual threads without OkHttp's per-host limit.
+     * The transport owns the dispatcher even when the client is borrowed. It runs calls on virtual threads
+     * without OkHttp's per-host limit.
      */
     Transport(
             @Nullable OkHttpClient borrowed,
@@ -131,12 +131,11 @@ final class Transport {
         this.sleeper = sleeper;
     }
 
-    /** Returns a builder for the API URL of a path of trusted segments, such as {@code lookup/ip}. */
+    /** The path is split on slashes, so pass only fixed paths such as {@code lookup/ip}, never caller input. */
     HttpUrl.Builder url(String path) {
         return baseUrl.newBuilder().addPathSegments(path);
     }
 
-    /** Sends a request and decodes a 2xx JSON body, or throws {@link ApiException} for any other status. */
     <T> T call(String method, HttpUrl url, byte @Nullable [] body, Policy policy, Class<T> type) {
         RawResponse response = send(method, url, body, "application/json", policy);
         if (response.statusCode() / 100 != 2) {
@@ -154,10 +153,7 @@ final class Transport {
         return Json.decode(bytes, type);
     }
 
-    /**
-     * Sends an API request, retrying as the policy allows, and returns the last response. The caller owns
-     * its body.
-     */
+    /** Returns the last response, even one with an error status. The caller owns its body. */
     RawResponse send(String method, HttpUrl url, byte @Nullable [] body, String accept, Policy policy) {
         Request request = new Request.Builder()
                 .url(url)
@@ -198,20 +194,13 @@ final class Transport {
         }
     }
 
-    /**
-     * Fetches a file from export storage, following its redirects, without credentials, retries, or the
-     * response hook.
-     */
     RawResponse fetchStorage(HttpUrl url) {
         return exchange(
                 storage,
                 new Request.Builder().url(url).header("User-Agent", userAgent).build());
     }
 
-    /**
-     * Sends one request and waits for the response headers. The wait is interruptible: interrupting the
-     * calling thread cancels the call.
-     */
+    /** Interrupting the calling thread while it waits for the response headers cancels the call. */
     private RawResponse exchange(OkHttpClient client, Request request) {
         if (closed.get()) {
             throw new IllegalStateException("the client is closed");
@@ -327,7 +316,6 @@ final class Transport {
         }
     }
 
-    /** Reads up to 64 KiB of an error response, closes it, and returns the matching exception. */
     ApiException apiError(RawResponse response) {
         byte[] body = new byte[0];
         IOException failure = null;
@@ -339,10 +327,7 @@ final class Transport {
         return ApiException.fromResponse(response.statusCode(), response.headers(), body, failure);
     }
 
-    /**
-     * Stops new requests and cancels calls waiting for a response. Idle connections are closed unless they
-     * belong to a borrowed client.
-     */
+    /** Stops new requests and cancels calls waiting for a response. */
     void close() {
         if (closed.compareAndSet(false, true)) {
             http.dispatcher().cancelAll();
@@ -364,7 +349,6 @@ final class Transport {
                 "connection failed: " + cause.getClass().getSimpleName(), cause);
     }
 
-    /** Connection failures are transient unless TLS failed or the caller interrupted the thread. */
     private static boolean isTransient(ApiConnectionException e) {
         if (Thread.currentThread().isInterrupted()) {
             return false;
@@ -377,7 +361,6 @@ final class Transport {
         return true;
     }
 
-    /** Returns {@code min(1s << attempt, 30s)} with ±25% jitter. */
     static Duration backoff(int attempt) {
         long seconds = Math.min(1L << Math.min(attempt, 5), 30);
         return Duration.ofNanos(

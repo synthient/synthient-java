@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * A column of a Parquet export.
  *
- * @param name the column name
  * @param type the column type, one of {@link ParquetType}
  */
 public record ParquetColumn(

@@ -9,7 +9,6 @@ import org.jspecify.annotations.Nullable;
  * organization and are shared by all of its keys.
  *
  * @param limit the bucket size
- * @param remaining the requests left in the bucket
  * @param reset the time until the bucket is full again
  */
 public record RateLimit(int limit, int remaining, Duration reset) {

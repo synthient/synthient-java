@@ -49,7 +49,6 @@ public final class SynthientClient implements AutoCloseable {
     /** The SDK version, sent in the {@code User-Agent} header. */
     public static final String VERSION = "1.0.0";
 
-    /** The production API. */
     public static final String DEFAULT_BASE_URL = "https://api.synthient.com/api/v4";
 
     private static final int MAX_BATCH_SIZE = 1000;
@@ -68,11 +67,7 @@ public final class SynthientClient implements AutoCloseable {
         this(builder());
     }
 
-    /**
-     * Creates a client with an API key.
-     *
-     * @throws IllegalArgumentException if the key is blank or not printable ASCII
-     */
+    /** @throws IllegalArgumentException if the key is blank or not printable ASCII */
     public SynthientClient(String apiKey) {
         this(builder().apiKey(apiKey));
     }
@@ -99,13 +94,12 @@ public final class SynthientClient implements AutoCloseable {
                 builder.sleeper);
     }
 
-    /** Returns a builder for a client with custom options. */
     public static Builder builder() {
         return new Builder();
     }
 
     /**
-     * Looks up an IP address. Costs one credit; failed lookups are free.
+     * Costs one credit; failed lookups are free.
      *
      * @param ip an IPv4 or IPv6 address literal
      * @throws IllegalArgumentException if {@code ip} is not an address literal; no request is sent
@@ -200,7 +194,7 @@ public final class SynthientClient implements AutoCloseable {
         transport.call("GET", transport.url("health").build(), null, Transport.Policy.RATE_LIMIT, JsonNode.class);
     }
 
-    /** Returns the proxies feed. Streaming needs the {@code PROXY_FIREHOSE} scope and exports {@code PROXY_FEEDS}. */
+    /** Streaming needs the {@code PROXY_FIREHOSE} scope and exports {@code PROXY_FEEDS}. */
     public Feed<ProxyEvent> proxies() {
         return new Feed<>(transport, "feeds/proxies", ProxyEvent.class);
     }
@@ -210,7 +204,7 @@ public final class SynthientClient implements AutoCloseable {
         return new Feed<>(transport, "feeds/anonymizers", AnonymizerEvent.class);
     }
 
-    /** Returns the torrents feed. */
+    /** Returns the BitTorrent DHT and tracker feed. */
     public Feed<TorrentEvent> torrents() {
         return new Feed<>(transport, "feeds/torrents", TorrentEvent.class);
     }
@@ -275,7 +269,7 @@ public final class SynthientClient implements AutoCloseable {
         }
     }
 
-    /** Builds a {@link SynthientClient}. A builder can be reused; each build creates an independent client. */
+    /** A builder can be reused; each build creates an independent client. */
     public static final class Builder {
         private @Nullable String apiKey;
         private HttpUrl baseUrl = HttpUrl.get(DEFAULT_BASE_URL);
@@ -289,14 +283,14 @@ public final class SynthientClient implements AutoCloseable {
 
         private Builder() {}
 
-        /** Sets the API key. Without one, the client reads {@code SYNTHIENT_API_KEY}. */
+        /** Defaults to the {@code SYNTHIENT_API_KEY} environment variable. */
         public Builder apiKey(String apiKey) {
             this.apiKey = requireNonNull(apiKey, "apiKey");
             return this;
         }
 
         /**
-         * Sets the API base URL, by default {@value SynthientClient#DEFAULT_BASE_URL}.
+         * Defaults to {@value SynthientClient#DEFAULT_BASE_URL}.
          *
          * @throws IllegalArgumentException if the URL is not http or https, has no host, or has user info, a
          *     query, or a fragment

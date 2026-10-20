@@ -15,7 +15,6 @@ import java.time.Instant;
  * @param domain the tunnel's destination domain, not a DNS query name
  * @param port the tunnel's destination port
  * @param protocol {@code dns}
- * @param meta the proxy the tunnel came through
  */
 public record HeliosDnsEvent(
         @JsonProperty("timestamp") @JsonFormat(without = JsonFormat.Feature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS)

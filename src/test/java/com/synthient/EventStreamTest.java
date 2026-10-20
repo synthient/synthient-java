@@ -30,7 +30,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 class EventStreamTest {
-    /** Returns a stream that yields at most {@code chunk} bytes per read. */
     private static InputStream chunked(String text, int chunk) {
         return new ByteArrayInputStream(text.getBytes(UTF_8)) {
             @Override

@@ -5,7 +5,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-/** Options for {@link GrpcSchema#fetch(String, FetchOptions)}. Build one with {@link #builder()}. */
 public final class FetchOptions {
     private final String endpoint;
     private final boolean plaintext;
@@ -29,7 +28,6 @@ public final class FetchOptions {
         return endpoint;
     }
 
-    /** Returns whether TLS is disabled. */
     public boolean plaintext() {
         return plaintext;
     }
@@ -44,7 +42,6 @@ public final class FetchOptions {
         return timeout;
     }
 
-    /** Builds {@link FetchOptions}. */
     public static final class Builder {
         private String endpoint = "";
         private boolean plaintext;
@@ -95,7 +92,6 @@ public final class FetchOptions {
             return this;
         }
 
-        /** Returns the options. */
         public FetchOptions build() {
             return new FetchOptions(this);
         }

@@ -6,7 +6,6 @@ import org.jspecify.annotations.Nullable;
 /**
  * A file in a torrent.
  *
- * @param path the file's path in the torrent
  * @param length the file size in bytes
  */
 public record TorrentFile(

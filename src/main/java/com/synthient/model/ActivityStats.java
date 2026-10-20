@@ -9,8 +9,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * @param peakHour the busiest hour of the day, 0 to 23
  * @param quietHour the quietest hour of the day, 0 to 23
- * @param medianPerHour the median events per hour
- * @param p95PerHour the 95th percentile of events per hour
  * @param cadence a sentence describing the activity pattern, one of {@link Cadence}
  */
 public record ActivityStats(

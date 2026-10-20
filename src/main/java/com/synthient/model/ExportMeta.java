@@ -9,17 +9,13 @@ import org.jspecify.annotations.Nullable;
 /**
  * Metadata of a Parquet export.
  *
- * @param id the export ID
  * @param stream the feed's stream name
  * @param kind whether the export covers an hour or a day, one of {@link ExportKind}
  * @param format the file format, {@code parquet}
  * @param date the start of the hour or day the export covers
  * @param hour the hour the export covers, or null for a daily export
- * @param rows the number of rows
  * @param size the file size in bytes
  * @param checksum the hex SHA-256 of the file
- * @param createdAt when the export was written
- * @param schema the Parquet columns
  */
 public record ExportMeta(
         @JsonProperty("id") String id,

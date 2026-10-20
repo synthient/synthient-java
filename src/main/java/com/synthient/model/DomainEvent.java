@@ -8,10 +8,7 @@ import java.time.Instant;
 /**
  * A proxy request to a domain.
  *
- * @param timestamp when the request was seen
  * @param sourceIp the source address, sent as {@code source_ip_masked} but not masked
- * @param targetSubdomain the subdomain requested
- * @param port the port requested
  * @param countryCode the country of the source address
  */
 public record DomainEvent(

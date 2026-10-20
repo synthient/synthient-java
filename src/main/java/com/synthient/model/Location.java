@@ -9,11 +9,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * @param country the country code
  * @param state the state or region
- * @param city the city
  * @param timezone the IANA time zone
  * @param latitude the latitude in degrees
  * @param longitude the longitude in degrees
- * @param geoHash the geohash of the coordinates
  */
 public record Location(
         @JsonProperty("country") String country,

@@ -10,16 +10,10 @@ import org.jspecify.annotations.Nullable;
  * Honeypot intelligence for a domain over the last 30 days. A domain the API has never seen is {@link
  * DomainStatus#INACTIVE} with zeroed statistics.
  *
- * @param domain the domain
  * @param status the activity status, one of {@link DomainStatus}
- * @param stats event counts
  * @param timeSeries daily event and unique IP counts
- * @param uniqueIps unique source IP counts
- * @param topSubdomains the most targeted subdomains
- * @param topPorts the most targeted ports
  * @param geoDistribution events by source country
  * @param hourDowHeatmap event counts as 7 rows of 24 hours, row 0 being Monday, in UTC
- * @param activityStats hourly activity statistics
  * @param recentEvents the most recent events, up to the requested limit
  * @param topAsn the source network with the most events, or null when there were none
  */

@@ -9,10 +9,6 @@ import java.util.List;
  * Risk, category, and provider data for an IP address.
  *
  * @param riskScore the risk score from 0 to 100
- * @param devices the devices seen behind the address
- * @param behavior the observed behaviors
- * @param categories the service categories of the address
- * @param providers the proxy and VPN providers seen using the address
  */
 public record Intelligence(
         @JsonProperty(value = "risk_score", required = true) int riskScore,
