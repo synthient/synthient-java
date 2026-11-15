@@ -23,28 +23,25 @@
 ## Table of Contents
 
 - [synthient-java](#synthient-java)
-  - [SDK Installation](#sdk-installation)
-  - [Requirements](#requirements)
-  - [API Keys](#api-keys)
+  - [Installation](#installation)
+  - [Quick Start](#quick-start)
   - [Authentication](#authentication)
-  - [SDK Example Usage](#sdk-example-usage)
   - [Available Resources and Operations](#available-resources-and-operations)
-  - [Streaming](#streaming)
-  - [Pagination](#pagination)
-  - [Downloads](#downloads)
-  - [Retries](#retries)
-  - [Timeouts](#timeouts)
-  - [Error Handling](#error-handling)
-  - [Server Selection](#server-selection)
-  - [Custom HTTP Client](#custom-http-client)
-  - [Debugging](#debugging)
+  - [IP and Domain Lookups](#ip-and-domain-lookups)
+  - [Account](#account)
+  - [Feeds](#feeds)
+  - [Errors](#errors)
+  - [Retries and Timeouts](#retries-and-timeouts)
+  - [Configuration](#configuration)
+  - [Response Metadata](#response-metadata)
   - [gRPC Schema](#grpc-schema)
-- [Development](#development)
-  - [Maturity](#maturity)
+  - [Requirements](#requirements)
+  - [Versioning](#versioning)
+  - [Documentation](#documentation)
   - [Contributions](#contributions)
   - [License](#license)
 
-## SDK Installation
+## Installation
 
 Add `com.synthient:synthient-java` to your build. The [gRPC schema fetcher](#grpc-schema) is a separate artifact, `com.synthient:synthient-java-grpcschema`, with the same version.
 
@@ -84,41 +81,7 @@ dependencies {
 </dependency>
 ```
 
-## Requirements
-
-Java 21 or later. The SDK depends on OkHttp 5, Jackson 3, and the JSpecify annotations.
-
-## API Keys
-
-Every request needs a Synthient API key. Keys are issued from the Synthient dashboard; if you don't have one, [contact us](mailto:contact@synthient.com). A key's scopes decide what it can call: `BASIC` covers the lookups and `account()`, and each feed has its own scopes, listed under [Feeds](#feeds).
-
-If a request fails even though you are sending a key:
-
-- **401 Unauthorized**: the key is malformed, unknown, or revoked.
-- **402 Payment Required**: the team is out of lookup credits.
-- **403 Forbidden**: the key lacks the scope for that endpoint or feed.
-
-`account()` shows the key's scopes and the team's remaining credits.
-
-## Authentication
-
-This SDK supports the following security scheme:
-
-| Name     | Type    | Scheme             | Environment Variable |
-| -------- | ------- | ------------------ | -------------------- |
-| `apiKey` | API key | `x-api-key` header | `SYNTHIENT_API_KEY`  |
-
-`new SynthientClient()` reads the key from `SYNTHIENT_API_KEY`. To pass it yourself, such as from a secret manager, use the constructor that takes a key or `apiKey` on the builder:
-
-```java
-SynthientClient client = new SynthientClient(apiKey);
-```
-
-Creating a client makes no network calls. To check a key, call `account()`, which costs no credits.
-
-## SDK Example Usage
-
-### Look up an IP address
+## Quick Start
 
 Get the network, location, and risk intelligence for an IPv4 or IPv6 address. Each lookup costs one credit; failed lookups are free.
 
@@ -142,40 +105,37 @@ public class LookupIp {
 
 `network()`, `location()`, and `intelligence()` return null when the API has no data for them. A client is safe for concurrent use, so reuse one and close it on shutdown. The examples below reuse `client`, and runnable programs are in [examples](examples/src/main/java/com/synthient/examples).
 
-### Look up many IP addresses
+The client and its exceptions are in the `com.synthient` package, and the response models are in `com.synthient.model`. See the [Java SDK guide](https://docs.synthient.com/sdks/java) for a longer walkthrough.
 
-Look up as many as 1000 addresses in one request for `ceil(n * 0.9)` credits. Private and reserved addresses are skipped and duplicates are merged, so match results by `ip()`.
+## Authentication
 
-```java
-List<IpInfo> results = client.lookupIps(List.of("8.8.8.8", "1.1.1.1"));
-for (IpInfo result : results) {
-    Intelligence intelligence = result.intelligence();
-    if (intelligence != null) {
-        System.out.println(result.ip() + " " + intelligence.riskScore());
-    }
-}
-```
+This SDK supports the following security scheme:
 
-### Look up a domain
+| Name     | Type    | Scheme             | Environment Variable |
+| -------- | ------- | ------------------ | -------------------- |
+| `apiKey` | API key | `x-api-key` header | `SYNTHIENT_API_KEY`  |
 
-Get the honeypot traffic observed for a domain and its most recent events. Each lookup costs one credit.
+`new SynthientClient()` reads the key from `SYNTHIENT_API_KEY`. To pass it yourself, such as from a secret manager, use the constructor that takes a key or `apiKey` on the builder:
 
 ```java
-DomainInfo domain = client.lookupDomain("example.com", 10);
-System.out.println(domain.status() + " " + domain.stats().events24h());
-for (DomainEvent event : domain.recentEvents()) {
-    System.out.println(event.timestamp() + " " + event.targetSubdomain() + " " + event.port());
-}
+SynthientClient client = new SynthientClient(apiKey);
 ```
 
-### Check your account
+Creating a client makes no network calls. To check a key, call `account()`, which costs no credits.
 
-Get the key's account, scopes, and remaining lookup credits, at no cost.
+See [Authentication](https://docs.synthient.com/authentication) for how keys and scopes work.
 
-```java
-Account account = client.account();
-System.out.println(account.organization().name() + " " + account.scopes() + " " + account.lookupQuota().credits());
-```
+### API Keys
+
+Every request needs a Synthient API key. Keys are issued from the Synthient dashboard; if you don't have one, [contact us](mailto:contact@synthient.com). A key's scopes decide what it can call: `BASIC` covers the lookups and `account()`, and each feed has its own scopes, listed under [Feeds](#feeds).
+
+If a request fails even though you are sending a key:
+
+- **401 Unauthorized**: the key is malformed, unknown, or revoked.
+- **402 Payment Required**: the team is out of lookup credits.
+- **403 Forbidden**: the key lacks the scope for that endpoint or feed.
+
+`account()` shows the key's scopes and the team's remaining credits.
 
 ## Available Resources and Operations
 
@@ -190,9 +150,9 @@ System.out.println(account.organization().name() + " " + account.scopes() + " " 
 - [`account`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/SynthientClient.html#account()) - Get the key's account, scopes, and remaining lookup credits
 - [`health`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/SynthientClient.html#health()) - Check that the API and its dependencies are healthy
 
-### [Feeds](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/Feed.html)
+### [Feed](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/Feed.html)
 
-Each feed comes from a method of the client, such as `client.proxies()`, and has the same methods:
+Each [feed](#feeds) comes from a method of the client, such as `client.proxies()`, and has the same methods:
 
 - [`stream`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/Feed.html#stream()) - Connect to the feed's real-time events
 - [`listExports`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/Feed.html#listExports(int,java.lang.String)) - List one page of the feed's Parquet exports, newest first
@@ -200,6 +160,61 @@ Each feed comes from a method of the client, such as `client.proxies()`, and has
 - [`exportMeta`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/Feed.html#exportMeta(java.lang.String)) - Get an export's checksum, size, row count, and Parquet schema
 - [`download`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/Feed.html#download(java.lang.String)) - Download an export's Parquet file
 - [`downloadUrl`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/Feed.html#downloadUrl(java.lang.String)) - Get a presigned URL for an export's Parquet file, valid for 24 hours
+
+</details>
+
+## IP and Domain Lookups
+
+`lookupIp` is shown in [Quick Start](#quick-start). A string that is not an IPv4 or IPv6 address throws `IllegalArgumentException` before any request is sent, and host names are never resolved. See [Lookups](https://docs.synthient.com/sdks/java/lookups) and the [IP API](https://docs.synthient.com/ipapi) for the fields of each response.
+
+### Look up many IP addresses
+
+Look up as many as 1000 addresses in one request for `ceil(n * 0.9)` credits. Private and reserved addresses are skipped and duplicates are merged, so match results by `ip()`.
+
+```java
+List<IpInfo> results = client.lookupIps(List.of("8.8.8.8", "1.1.1.1"));
+for (IpInfo result : results) {
+    Intelligence intelligence = result.intelligence();
+    if (intelligence != null) {
+        System.out.println(result.ip() + " " + intelligence.riskScore());
+    }
+}
+```
+
+An empty collection returns an empty list without a request, and more than 1000 addresses throws `IllegalArgumentException`.
+
+### Look up a domain
+
+Get the honeypot traffic observed for a domain and its most recent events. Each lookup costs one credit.
+
+```java
+DomainInfo domain = client.lookupDomain("example.com", 10);
+System.out.println(domain.status() + " " + domain.stats().events24h());
+for (DomainEvent event : domain.recentEvents()) {
+    System.out.println(event.timestamp() + " " + event.targetSubdomain() + " " + event.port());
+}
+```
+
+The second argument is the number of recent events to return, which the API clamps to 1000. `lookupDomain(domain)` without it returns the API's default of 50. Internationalized names must be in Punycode.
+
+## Account
+
+Get the key's account, scopes, and remaining lookup credits, at no cost.
+
+```java
+Account account = client.account();
+System.out.println(account.organization().name() + " " + account.scopes() + " " + account.lookupQuota().credits());
+```
+
+`health()` returns normally when the API is up and throws an `ApiException` with status 503 when it is not:
+
+```java
+client.health();
+```
+
+## Feeds
+
+Each feed comes from a method of the client and has a real-time stream and hourly and daily Parquet exports, with a separate scope for each. See [Feeds](https://docs.synthient.com/sdks/java/feeds) for every method, and [Firehose](https://docs.synthient.com/enterprise/firehose) and [Feeds](https://docs.synthient.com/enterprise/feeds) for the data behind them.
 
 | Method          | Data                                          | Event type         | Stream scope            | Export scope          |
 | --------------- | --------------------------------------------- | ------------------ | ----------------------- | --------------------- |
@@ -212,9 +227,7 @@ Each feed comes from a method of the client, such as `client.proxies()`, and has
 | `heliosDns()`   | Helios honeypot tunnel destinations           | `HeliosDnsEvent`   | `HONEYPOT_DNS_STREAM`   | `HONEYPOT_DNS_FEED`   |
 | `heliosAdb()`   | Helios honeypot Android Debug Bridge commands | `HeliosAdbEvent`   | `HONEYPOT_ADB_STREAM`   | `HONEYPOT_ADB_FEED`   |
 
-</details>
-
-## Streaming
+### Streaming
 
 `stream()` connects to a feed's real-time events and returns an `EventStream`, which you iterate over and close to disconnect:
 
@@ -240,7 +253,7 @@ while (true) {
 - Any other failure ends the stream, and the loop waits 2 seconds before reconnecting.
 - Events sent while disconnected are missed. The API has no resume cursor.
 
-## Pagination
+### Pagination
 
 `listExports(limit, cursor)` returns one page of a feed's exports, newest first. Pass `page.nextCursor()` as the cursor to get the next page; it is null on the last one.
 
@@ -261,7 +274,9 @@ for (Export export : client.proxies().allExports()) {
 
 On the first page, the newest hourly export has the ID `latest`, a moving alias for the freshest export. Its `date()` and `hour()` give its stable ID, such as `2026-10-14/21`.
 
-## Downloads
+`listExports()` without arguments returns the first page with the API's default page size of 100. The API allows up to 500 exports per page and clamps larger limits. `allExports(limit, cursor)` sets the page size and the cursor to start from.
+
+### Downloads
 
 Exports are Parquet files. `download` returns a file's contents as an `InputStream`, which you must close:
 
@@ -276,40 +291,7 @@ try (InputStream body = client.proxies().download(ExportId.LATEST)) {
 - `downloadUrl` returns a presigned URL that works without a key for 24 hours, so treat it as a secret. Your API key is never sent to the storage host.
 - Hourly exports roll into the daily export shortly after 00:30 UTC the next day. After that, the hour returns a 400.
 
-## Retries
-
-The client retries a failed request up to twice, backing off exponentially with jitter and honoring `Retry-After`:
-
-| Requests                      | Retried on                                                                                   |
-| ----------------------------- | -------------------------------------------------------------------------------------------- |
-| Account and feed requests     | 500, 502, 503, and 504, most connection failures and timeouts, and 429 with `Retry-After`    |
-| Billed lookups and `health()` | Only 429 with `Retry-After`, which comes before any work, so a lookup is never charged twice |
-
-A 429 without `Retry-After` means the monthly request budget is spent or too many streams are open, so it is thrown at once. Downloads from the storage host are never retried.
-
-Set the number of retries with `maxRetries` on the builder. Zero disables them:
-
-```java
-SynthientClient client = SynthientClient.builder()
-        .maxRetries(4)
-        .build();
-```
-
-## Timeouts
-
-The client sets an idle timeout rather than an overall one, because streams and downloads are long-lived. It limits each wait for the response headers and then for each part of the body, 60 seconds by default:
-
-```java
-SynthientClient client = SynthientClient.builder()
-        .timeout(Duration.ofSeconds(20))
-        .build();
-```
-
-- When it runs out, the call throws `ApiTimeoutException`. Reading a download throws a plain `IOException` instead.
-- Streams get a keepalive line about every 15 seconds, so keep the timeout above that.
-- To cancel a call that is waiting for a response or a retry, interrupt its thread. To stop a stream or download that is already reading, close it from another thread.
-
-## Error Handling
+## Errors
 
 A request that fails with a non-success status throws an [`ApiException`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/ApiException.html):
 
@@ -369,9 +351,63 @@ Every exception the SDK throws is unchecked. Reading a download's `InputStream` 
 
 </details>
 
-## Server Selection
+See [Errors and retries](https://docs.synthient.com/sdks/java/errors) for the SDK's exceptions and [Errors](https://docs.synthient.com/errors) for what each status means.
 
-### Override Server URL Per-Client
+## Retries and Timeouts
+
+See [Errors and retries](https://docs.synthient.com/sdks/java/errors#retries-and-timeouts) and [Rate Limits](https://docs.synthient.com/rate-limits).
+
+### Retries
+
+The client retries a failed request up to twice, backing off exponentially with jitter and honoring `Retry-After`. The backoff starts at one second and doubles up to 30 seconds, and a response whose `Retry-After` is longer than one minute is thrown instead of retried:
+
+| Requests                      | Retried on                                                                                   |
+| ----------------------------- | -------------------------------------------------------------------------------------------- |
+| Account and feed requests     | 500, 502, 503, and 504, most connection failures and timeouts, and 429 with `Retry-After`    |
+| Billed lookups and `health()` | Only 429 with `Retry-After`, which comes before any work, so a lookup is never charged twice |
+
+A 429 without `Retry-After` means the monthly request budget is spent or too many streams are open, so it is thrown at once. Downloads from the storage host are never retried.
+
+Set the number of retries with `maxRetries` on the builder. Zero disables them:
+
+```java
+SynthientClient client = SynthientClient.builder()
+        .maxRetries(4)
+        .build();
+```
+
+### Timeouts
+
+The client sets an idle timeout rather than an overall one, because streams and downloads are long-lived. It limits each wait for the response headers and then for each part of the body, 60 seconds by default:
+
+```java
+SynthientClient client = SynthientClient.builder()
+        .timeout(Duration.ofSeconds(20))
+        .build();
+```
+
+- When it runs out, the call throws `ApiTimeoutException`. Reading a download throws a plain `IOException` instead.
+- Connecting has its own timeout of 10 seconds, or your `OkHttpClient`'s if you pass [one](#custom-http-client), and running out of it also throws `ApiTimeoutException`.
+- Streams get a keepalive line about every 15 seconds, so keep the timeout above that.
+- To cancel a call that is waiting for a response or a retry, interrupt its thread. To stop a stream or download that is already reading, close it from another thread.
+
+## Configuration
+
+`SynthientClient.builder()` returns a builder for a client with custom options. Each option is a method of the builder, and `build()` creates the client. See [Client](https://docs.synthient.com/sdks/java/client) for the details of each.
+
+| Option         | Type                         | Default                            | Description                                                                     |
+| -------------- | ---------------------------- | ---------------------------------- | ------------------------------------------------------------------------------- |
+| `apiKey`       | `String`                     | `SYNTHIENT_API_KEY`                | The API key                                                                     |
+| `baseUrl`      | `String`                     | `https://api.synthient.com/api/v4` | The API base URL, including the version path                                    |
+| `maxRetries`   | `int`                        | `2`                                | How many times a failed request is [retried](#retries)                          |
+| `timeout`      | `Duration`                   | 60 seconds                         | The idle [timeout](#timeouts)                                                   |
+| `httpClient`   | `OkHttpClient`               | A client the SDK creates           | The [OkHttp client](#custom-http-client) to derive the SDK's from               |
+| `userAgent`    | `String`                     | None                               | A product token added after the SDK's `User-Agent`                              |
+| `responseHook` | `Consumer<ResponseMetadata>` | None                               | A function called with the [metadata](#response-metadata) of every API response |
+
+An invalid option, such as a negative retry count, a timeout that is not positive, or a base URL with a query, throws `IllegalArgumentException`. Closing a client cancels the calls that are waiting for a response, and later calls throw `IllegalStateException`. Open streams and downloads keep running until they are closed.
+
+### Server Selection
 
 The default server is `https://api.synthient.com/api/v4`. Use `baseUrl` on the builder to send requests elsewhere, such as a mock server in tests:
 
@@ -381,7 +417,7 @@ SynthientClient client = SynthientClient.builder()
         .build();
 ```
 
-## Custom HTTP Client
+### Custom HTTP Client
 
 Pass your own [OkHttp](https://square.github.io/okhttp/) `OkHttpClient` to `httpClient` on the builder, for example to use a proxy:
 
@@ -401,7 +437,7 @@ SynthientClient client = SynthientClient.builder()
 
 `userAgent("my-app/1.2")` on the builder adds your product token to the `User-Agent` header.
 
-## Debugging
+## Response Metadata
 
 `responseHook` on the builder calls a function after every API response, including retries, pages, and stream connections, with the status, request ID, rate limit, and headers:
 
@@ -417,7 +453,7 @@ SynthientClient client = SynthientClient.builder()
         .build();
 ```
 
-The hook must be safe for concurrent use, and an exception it throws fails the call.
+The hook runs on the calling thread and must be safe for concurrent use, and an exception it throws fails the call. `meta.rateLimit()` is null when the response has no complete `RateLimit-*` headers, and its `reset()` is the time until the bucket is full again. Downloads from the storage host are not reported. See [Response metadata](https://docs.synthient.com/sdks/java/client#response-metadata) and [Rate Limits](https://docs.synthient.com/rate-limits).
 
 > [!WARNING]
 > Response headers can contain secrets, such as presigned download URLs. Avoid logging `meta.headers()` in production. `ResponseMetadata.toString()` leaves them out.
@@ -440,11 +476,34 @@ try {
 
 `schema.descriptorSet()` is a protobuf `FileDescriptorSet`. `GrpcSchema.explain` describes common gRPC errors in plain language.
 
-# Development
+`GrpcSchema.fetch(apiKey)` fetches every service from `grpc.synthient.com:443` over TLS. Pass `FetchOptions` to choose the endpoint, the symbols to resolve, or the deadline for the whole fetch, which is 30 seconds by default:
 
-## Maturity
+```java
+Schema schema = GrpcSchema.fetch(
+        apiKey,
+        FetchOptions.builder()
+                .symbols("synthient.v1.SynthientService")
+                .timeout(Duration.ofSeconds(10))
+                .build());
+System.out.println(schema.endpoint() + " " + schema.symbols());
+```
+
+`endpoint` on the options takes `host:port`, a bare host, or a `grpc://` or `https://` URL, and `plaintext(true)` disables TLS for a local development server. `SchemaException.code()` is the gRPC status code of the failure, or null when the failure did not come from gRPC. See [gRPC schema](https://docs.synthient.com/sdks/java/grpc-schema).
+
+## Requirements
+
+Java 21 or later. The SDK depends on OkHttp 5, Jackson 3, and the JSpecify annotations.
+
+## Versioning
 
 This SDK follows [Semantic Versioning](https://semver.org). Breaking changes ship only in a new major version, except that model records gain components in minor releases as the API adds fields, which can change their constructors and record patterns.
+
+## Documentation
+
+- [Java SDK guide](https://docs.synthient.com/sdks/java): [client](https://docs.synthient.com/sdks/java/client), [lookups](https://docs.synthient.com/sdks/java/lookups), [feeds](https://docs.synthient.com/sdks/java/feeds), [errors and retries](https://docs.synthient.com/sdks/java/errors), [types](https://docs.synthient.com/sdks/java/types), and [gRPC schema](https://docs.synthient.com/sdks/java/grpc-schema)
+- [Javadoc](https://javadoc.io/doc/com.synthient/synthient-java), and the [gRPC schema artifact's](https://javadoc.io/doc/com.synthient/synthient-java-grpcschema)
+- [API reference](https://docs.synthient.com/ipapi), [authentication](https://docs.synthient.com/authentication), [rate limits](https://docs.synthient.com/rate-limits), and [errors](https://docs.synthient.com/errors)
+- [Runnable examples](examples/src/main/java/com/synthient/examples)
 
 ## Contributions
 
