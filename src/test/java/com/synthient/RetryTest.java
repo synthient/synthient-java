@@ -151,6 +151,7 @@ class RetryTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     void billedGetIsNotResentOnAStaleConnection() throws Exception {
         try (TestServer server = new TestServer(exchange -> {
                     if (exchange.getRequestURI().getPath().endsWith("/health")) {

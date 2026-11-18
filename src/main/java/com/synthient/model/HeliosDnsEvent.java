@@ -15,6 +15,7 @@ import java.time.Instant;
  * @param domain the tunnel's destination domain, not a DNS query name
  * @param port the tunnel's destination port
  * @param protocol {@code dns}
+ * @param transport the tunnel's transport, one of {@link HeliosTransport}
  */
 public record HeliosDnsEvent(
         @JsonProperty("timestamp") @JsonFormat(without = JsonFormat.Feature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS)
@@ -24,7 +25,8 @@ public record HeliosDnsEvent(
         @JsonProperty("domain") String domain,
         @JsonProperty(value = "port", required = true) int port,
         @JsonProperty("protocol") String protocol,
-        @JsonProperty("meta") HeliosMeta meta) {
+        @JsonProperty("meta") HeliosMeta meta,
+        @JsonProperty("transport") String transport) {
 
     public HeliosDnsEvent {
         requireNonNull(timestamp, "timestamp");
@@ -32,5 +34,6 @@ public record HeliosDnsEvent(
         requireNonNull(domain, "domain");
         requireNonNull(protocol, "protocol");
         requireNonNull(meta, "meta");
+        requireNonNull(transport, "transport");
     }
 }

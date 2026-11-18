@@ -55,6 +55,36 @@ class AccountTest {
     }
 
     @Test
+    void apiKeyCanBeNull() throws Exception {
+        String body = ACCOUNT.replaceAll("(?s)\"api_key\".*\\}\\s*\\}", "\"api_key\": null}");
+        try (TestServer server = new TestServer(exchange -> TestServer.json(exchange, 200, body));
+                SynthientClient client = server.client()) {
+            assertNull(client.account().apiKey());
+        }
+    }
+
+    @Test
+    void decodesNewAndUnknownScopes() throws Exception {
+        String body = ACCOUNT.replace(
+                "[\"BASIC\", \"PROXY_FEEDS\"]",
+                "[\"GEOLOCATION_FEED\", \"WHOIS_FEED\", \"WHOIS_STREAM\", \"HELIOS\", \"NETWORK_IOCS_FEED\","
+                        + " \"FILE_IOCS_STREAM\", \"SOMETHING_NEW\"]");
+        try (TestServer server = new TestServer(exchange -> TestServer.json(exchange, 200, body));
+                SynthientClient client = server.client()) {
+            assertEquals(
+                    List.of(
+                            Scope.GEOLOCATION_FEED,
+                            Scope.WHOIS_FEED,
+                            Scope.WHOIS_STREAM,
+                            Scope.HELIOS,
+                            Scope.NETWORK_IOCS_FEED,
+                            Scope.FILE_IOCS_STREAM,
+                            "SOMETHING_NEW"),
+                    client.account().scopes());
+        }
+    }
+
+    @Test
     void healthSucceeds() throws Exception {
         try (TestServer server = new TestServer(exchange -> TestServer.json(exchange, 200, "{\"status\":\"ok\"}"));
                 SynthientClient client = server.client()) {

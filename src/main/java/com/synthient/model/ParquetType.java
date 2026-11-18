@@ -1,6 +1,9 @@
 package com.synthient.model;
 
-/** Known values of {@link ParquetColumn#type()}. The API may add others. */
+/**
+ * Known values of {@link ParquetColumn#type()}. The API may add others, and the datasets already send types such as
+ * {@code double}, {@code timestamp}, and {@code list<string>}.
+ */
 public final class ParquetType {
     public static final String STRING = "string";
     public static final String INT64 = "int64";

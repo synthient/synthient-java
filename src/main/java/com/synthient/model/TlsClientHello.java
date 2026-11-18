@@ -13,6 +13,15 @@ import org.jspecify.annotations.Nullable;
  * @param sessionIdLength the session ID length in bytes
  * @param extensions the extensions in wire order
  * @param compressCertificate the certificate compression algorithms
+ * @param complete false when the sensor captured only part of the ClientHello
+ * @param truncated true when the ClientHello was cut short
+ * @param transport the transport the handshake was read from, as the sensor reports it, one of {@link
+ *     HeliosTransport}
+ * @param recordVersionCode {@code recordVersion} as its code point, such as 769
+ * @param handshakeVersionCode {@code handshakeVersion} as its code point, such as 771
+ * @param supportedVersionCodes {@code supportedVersions} as code points in the same order, GREASE values
+ *     included
+ * @param alpnHex the {@code alpn} entries hex-encoded, in the same order
  */
 public record TlsClientHello(
         @JsonProperty("record_version") @Nullable String recordVersion,
@@ -42,7 +51,17 @@ public record TlsClientHello(
 
         @JsonProperty("signed_certificate_timestamps") @Nullable Boolean signedCertificateTimestamps,
 
-        @JsonProperty("status_request") @Nullable Boolean statusRequest) {
+        @JsonProperty("status_request") @Nullable Boolean statusRequest,
+        @JsonProperty("complete") @Nullable Boolean complete,
+        @JsonProperty("truncated") @Nullable Boolean truncated,
+        @JsonProperty("transport") @Nullable String transport,
+        @JsonProperty("record_version_code") @Nullable Integer recordVersionCode,
+        @JsonProperty("handshake_version_code") @Nullable Integer handshakeVersionCode,
+        @JsonProperty("supported_version_codes") @Nullable List<Integer> supportedVersionCodes,
+        @JsonProperty("alpn_hex") @Nullable List<String> alpnHex,
+        @JsonProperty("signature_algorithms_cert") @Nullable List<TlsCodeName> signatureAlgorithmsCert,
+        @JsonProperty("record_size_limit") @Nullable Integer recordSizeLimit,
+        @JsonProperty("max_fragment_length") @Nullable Integer maxFragmentLength) {
 
     public TlsClientHello {
         cipherSuites = cipherSuites == null ? null : List.copyOf(cipherSuites);
@@ -56,5 +75,8 @@ public record TlsClientHello(
         keyShareGroups = keyShareGroups == null ? null : List.copyOf(keyShareGroups);
         pskKeyExchangeModes = pskKeyExchangeModes == null ? null : List.copyOf(pskKeyExchangeModes);
         compressCertificate = compressCertificate == null ? null : List.copyOf(compressCertificate);
+        supportedVersionCodes = supportedVersionCodes == null ? null : List.copyOf(supportedVersionCodes);
+        alpnHex = alpnHex == null ? null : List.copyOf(alpnHex);
+        signatureAlgorithmsCert = signatureAlgorithmsCert == null ? null : List.copyOf(signatureAlgorithmsCert);
     }
 }

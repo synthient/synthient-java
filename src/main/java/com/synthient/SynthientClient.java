@@ -37,9 +37,9 @@ import tools.jackson.databind.JsonNode;
  *
  * <p>Failed calls throw {@link ApiException} when the API answers with an error status, {@link
  * ApiConnectionException} when no response arrives, and {@link SynthientException} when the response is
- * invalid. Rate limits with a {@code Retry-After} are retried. Account and feed requests are also retried
- * after server errors, and after connection failures and timeouts before the response arrives, except TLS
- * failures. Neither the SDK nor OkHttp resends a billed lookup after a failure the server may have charged
+ * invalid. Rate limits with a {@code Retry-After} are retried. Account, feed, and dataset requests are also
+ * retried after server errors, and after connection failures and timeouts before the response arrives, except
+ * TLS failures. Neither the SDK nor OkHttp resends a billed lookup after a failure the server may have charged
  * for.
  *
  * <p>Close the client to release its connections. A client built with a caller's {@link OkHttpClient} leaves
@@ -113,8 +113,11 @@ public final class SynthientClient implements AutoCloseable {
     }
 
     /**
-     * Looks up up to 1000 IP addresses in one request, billed at 0.9 credits per distinct address, rounded
-     * up.
+     * Looks up many IP addresses in one request, billed at 0.9 credits per distinct address, rounded up.
+     *
+     * <p>The most addresses a request can hold depends on the plan: 100 on Free, 500 on Starter, and 1000 on
+     * Premium and Enterprise. The SDK checks only the 1000 limit, and the API answers a larger batch than the plan
+     * allows with a 422 {@link ApiException}.
      *
      * <p>Private and reserved addresses are skipped and duplicates are merged, so the results may be fewer
      * than the inputs and in a different order. Match them by {@link IpInfo#ip()}. An empty collection
@@ -148,7 +151,13 @@ public final class SynthientClient implements AutoCloseable {
                 .results();
     }
 
-    /** Looks up honeypot intelligence for a domain, with the API's default of 50 recent events. Costs one credit. */
+    /**
+     * Looks up honeypot intelligence for a domain, with the API's default of 50 recent events. Costs one credit.
+     *
+     * @deprecated Domain lookup was removed from the Synthient API and will stop working when the endpoint is
+     *     turned off. It will be removed in the next major version.
+     */
+    @Deprecated
     public DomainInfo lookupDomain(String domain) {
         return fetchDomain(domain, null);
     }
@@ -160,7 +169,10 @@ public final class SynthientClient implements AutoCloseable {
      * @param limit the number of recent events to return, clamped by the API to 1000
      * @throws IllegalArgumentException if the domain is empty, {@code .}, or {@code ..}, or the limit is less
      *     than 1; no request is sent
+     * @deprecated Domain lookup was removed from the Synthient API and will stop working when the endpoint is
+     *     turned off. It will be removed in the next major version.
      */
+    @Deprecated
     public DomainInfo lookupDomain(String domain, int limit) {
         if (limit < 1) {
             throw new IllegalArgumentException("limit must be at least 1, got " + limit);
@@ -168,6 +180,7 @@ public final class SynthientClient implements AutoCloseable {
         return fetchDomain(domain, limit);
     }
 
+    @SuppressWarnings("deprecation")
     private DomainInfo fetchDomain(String domain, @Nullable Integer limit) {
         if (domain.isEmpty() || domain.equals(".") || domain.equals("..")) {
             throw new IllegalArgumentException("invalid domain \"" + domain + "\"");
@@ -216,22 +229,38 @@ public final class SynthientClient implements AutoCloseable {
 
     /** Returns the Helios feed of HTTP requests received by honeypots through proxies. */
     public Feed<HeliosHttpEvent> heliosHttp() {
-        return new Feed<>(transport, "feeds/helio/http", HeliosHttpEvent.class);
+        return new Feed<>(transport, "feeds/helios/http", HeliosHttpEvent.class);
     }
 
     /** Returns the Helios feed of TLS handshakes received by honeypots through proxies. */
     public Feed<HeliosHttpsEvent> heliosHttps() {
-        return new Feed<>(transport, "feeds/helio/https", HeliosHttpsEvent.class);
+        return new Feed<>(transport, "feeds/helios/https", HeliosHttpsEvent.class);
     }
 
     /** Returns the Helios feed of DNS tunnels opened to honeypots through proxies. */
     public Feed<HeliosDnsEvent> heliosDns() {
-        return new Feed<>(transport, "feeds/helio/dns", HeliosDnsEvent.class);
+        return new Feed<>(transport, "feeds/helios/dns", HeliosDnsEvent.class);
     }
 
     /** Returns the Helios feed of commands run on Android Debug Bridge honeypots. */
     public Feed<HeliosAdbEvent> heliosAdb() {
-        return new Feed<>(transport, "feeds/helio/adb", HeliosAdbEvent.class);
+        return new Feed<>(transport, "feeds/helios/adb", HeliosAdbEvent.class);
+    }
+
+    /**
+     * Returns the daily geolocation dataset of IP ranges, in Parquet, gzip CSV, and MaxMind DB files. It needs the
+     * {@code GEOLOCATION_FEED} scope.
+     */
+    public Dataset geolocation() {
+        return new Dataset(transport, "feeds/geolocation");
+    }
+
+    /**
+     * Returns the daily WHOIS dataset of registry records, as a {@code tar.gz} of Parquet files, one per entity. It
+     * needs the {@code WHOIS_FEED} scope.
+     */
+    public Dataset whois() {
+        return new Dataset(transport, "feeds/whois");
     }
 
     /**

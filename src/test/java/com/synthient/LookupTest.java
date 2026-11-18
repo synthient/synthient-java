@@ -56,6 +56,18 @@ class LookupTest {
         }
     }
 
+    @Test
+    void nullSectionsAreNull() throws Exception {
+        String body = "{\"ip\":\"10.0.0.1\",\"network\":null,\"location\":null,\"intelligence\":null}";
+        try (TestServer server = new TestServer(exchange -> TestServer.json(exchange, 200, body));
+                SynthientClient client = server.client()) {
+            IpInfo info = client.lookupIp("10.0.0.1");
+            assertNull(info.network());
+            assertNull(info.location());
+            assertNull(info.intelligence());
+        }
+    }
+
     @ParameterizedTest
     @ValueSource(
             strings = {
@@ -162,6 +174,7 @@ class LookupTest {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @ParameterizedTest
     @CsvSource({
         "example.com, /api/v4/lookup/domain/example.com",
@@ -178,6 +191,7 @@ class LookupTest {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     void decodesADomainLookup() throws Exception {
         try (TestServer server = new TestServer(exchange -> TestServer.json(exchange, 200, DOMAIN_INFO));
@@ -195,6 +209,7 @@ class LookupTest {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @ParameterizedTest
     @ValueSource(strings = {"", ".", ".."})
     void invalidDomainsSendNothing(String domain) throws Exception {

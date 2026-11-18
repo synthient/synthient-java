@@ -1,7 +1,5 @@
 package com.synthient.model;
 
-import static java.util.Objects.requireNonNull;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
@@ -13,6 +11,7 @@ import java.util.List;
 public record ParquetSchema(@JsonProperty("fields") List<ParquetColumn> fields) {
 
     public ParquetSchema {
-        fields = List.copyOf(requireNonNull(fields, "fields"));
+        // The API has sent null for a WHOIS archive's empty schema.
+        fields = fields == null ? List.of() : List.copyOf(fields);
     }
 }

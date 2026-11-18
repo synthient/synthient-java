@@ -125,6 +125,10 @@ final class TestServer implements AutoCloseable {
                 client.heliosAdb());
     }
 
+    static List<Dataset> datasets(SynthientClient client) {
+        return List.of(client.geolocation(), client.whois());
+    }
+
     static void json(HttpExchange exchange, int status, String body) throws IOException {
         respond(exchange, status, "application/json", body);
     }

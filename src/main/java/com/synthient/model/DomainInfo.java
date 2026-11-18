@@ -16,7 +16,10 @@ import org.jspecify.annotations.Nullable;
  * @param hourDowHeatmap event counts as 7 rows of 24 hours, row 0 being Monday, in UTC
  * @param recentEvents the most recent events, up to the requested limit
  * @param topAsn the source network with the most events, or null when there were none
+ * @deprecated Domain lookup was removed from the Synthient API and will stop working when the endpoint is turned
+ *     off. It will be removed in the next major version.
  */
+@Deprecated
 public record DomainInfo(
         @JsonProperty("domain") String domain,
         @JsonProperty("status") String status,

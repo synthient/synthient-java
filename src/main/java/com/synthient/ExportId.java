@@ -3,15 +3,16 @@ package com.synthient;
 import java.time.LocalDate;
 
 /**
- * Builds the IDs of feed exports: {@link #LATEST}, a UTC day such as {@code 2026-05-03}, or an hour of a day
- * such as {@code 2026-05-03/7}. {@link com.synthient.model.Export#id()} returns ready-made IDs.
+ * Builds the IDs of exports: {@link #LATEST}, a UTC day such as {@code 2026-05-03}, or an hour of a day such as
+ * {@code 2026-05-03/7}. Datasets have only daily exports. {@link com.synthient.model.Export#id()} returns
+ * ready-made IDs, and {@link #daily} also gives the {@code day} that filters a listing.
  *
  * <p>An hourly export stays available until its day is rolled up into the daily export, shortly after
  * 00:30 UTC the next day. After that the API answers 400 for the hour. While a day is being rolled up, the daily
  * export answers 404 with a {@link ApiException#retryAfter() Retry-After}.
  */
 public final class ExportId {
-    /** The newest export: the latest hour during the day, then the daily rollup. */
+    /** The newest export: for a feed, the latest hour during the day, then the daily rollup. */
     public static final String LATEST = "latest";
 
     private ExportId() {}

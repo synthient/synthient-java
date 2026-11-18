@@ -9,9 +9,9 @@ dependencies {
 
 val examples = listOf(
     "AccountExample",
+    "DownloadDatasetExample",
     "DownloadExportExample",
     "GrpcSchemaExample",
-    "LookupDomainExample",
     "LookupIpExample",
     "LookupIpsExample",
     "StreamExample",

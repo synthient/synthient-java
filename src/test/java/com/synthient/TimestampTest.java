@@ -22,7 +22,7 @@ class TimestampTest {
         byte[] anonymizer = ("{\"timestamp\":" + timestamp + "}").getBytes(UTF_8);
         byte[] helios = """
                 {"timestamp":%d,"tunnel_id":1,"domain":"example.com","port":80,"protocol":"http",
-                 "meta":{"proxy_ip":"198.51.100.4","provider":"acme"}}
+                 "meta":{"proxy_ip":"198.51.100.4","provider":"acme"},"transport":"tcp"}
                 """.formatted(timestamp).getBytes(UTF_8);
         Instant expected = Instant.ofEpochMilli(timestamp);
         assertEquals(expected, Json.decode(anonymizer, AnonymizerEvent.class).timestamp());

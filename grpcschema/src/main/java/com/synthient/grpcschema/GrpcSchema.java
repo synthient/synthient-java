@@ -54,7 +54,8 @@ public final class GrpcSchema {
 
     /**
      * Fetches the protobuf files that define the requested symbols, or every listed service, along with all of
-     * their imports. The API key is sent as {@code x-api-key} metadata unless it is blank.
+     * their imports. Server reflection requires the API key, which is sent as {@code x-api-key} metadata. A blank
+     * key is not sent, so the server answers {@code UNAUTHENTICATED}.
      *
      * @throws SchemaException if reflection fails; {@link #explain(Throwable)} describes common causes
      * @throws IllegalArgumentException if the endpoint is invalid

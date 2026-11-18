@@ -10,7 +10,10 @@ import java.time.Instant;
  *
  * @param sourceIp the source address, sent as {@code source_ip_masked} but not masked
  * @param countryCode the country of the source address
+ * @deprecated Domain lookup was removed from the Synthient API and will stop working when the endpoint is turned
+ *     off. It will be removed in the next major version.
  */
+@Deprecated
 public record DomainEvent(
         @JsonProperty("timestamp") Instant timestamp,
         @JsonProperty("source_ip_masked") String sourceIp,

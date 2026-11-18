@@ -11,7 +11,10 @@ import java.util.List;
  * @param value24h unique IPs in the last 24 hours
  * @param value30d unique IPs in the last 30 days
  * @param sparkline24h unique IPs per hour over the last 24 hours
+ * @deprecated Domain lookup was removed from the Synthient API and will stop working when the endpoint is turned
+ *     off. It will be removed in the next major version.
  */
+@Deprecated
 public record UniqueIps(
         @JsonProperty(value = "value_24h", required = true) long value24h,
         @JsonProperty(value = "value_30d", required = true) long value30d,

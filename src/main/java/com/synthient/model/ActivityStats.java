@@ -10,7 +10,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @param peakHour the busiest hour of the day, 0 to 23
  * @param quietHour the quietest hour of the day, 0 to 23
  * @param cadence a sentence describing the activity pattern, one of {@link Cadence}
+ * @deprecated Domain lookup was removed from the Synthient API and will stop working when the endpoint is turned
+ *     off. It will be removed in the next major version.
  */
+@Deprecated
 public record ActivityStats(
         @JsonProperty(value = "peak_hour", required = true) int peakHour,
         @JsonProperty(value = "quiet_hour", required = true) int quietHour,

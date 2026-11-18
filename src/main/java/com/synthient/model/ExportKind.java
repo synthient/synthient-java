@@ -1,6 +1,9 @@
 package com.synthient.model;
 
-/** Known values of {@link Export#kind()} and {@link ExportMeta#kind()}. The API may add others. */
+/**
+ * Known values of {@link Export#kind()}, {@link ExportMeta#kind()}, and {@link ExportVolumeDay#kind()}. The API may
+ * add others.
+ */
 public final class ExportKind {
     public static final String HOURLY = "hourly";
     public static final String DAILY = "daily";

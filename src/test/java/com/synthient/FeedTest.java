@@ -1,14 +1,23 @@
 package com.synthient;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.synthient.model.Export;
+import com.synthient.model.ExportEntity;
+import com.synthient.model.ExportFormat;
 import com.synthient.model.ExportKind;
+import com.synthient.model.ExportMeta;
 import com.synthient.model.ExportPage;
+import com.synthient.model.ExportVariant;
+import com.synthient.model.ExportVolume;
+import com.synthient.model.ParquetColumn;
+import com.synthient.model.WhoisEntity;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -25,7 +34,8 @@ class FeedTest {
     private static String export(String id) {
         return """
                 {"id": "%s", "kind": "hourly", "date": "2026-05-03", "hour": 7, "size_bytes": 10, "row_count": 2,
-                 "checksum": "ab", "created_at": 1777777777, "download_path": "/api/v4/feeds/proxies/export/%s"}
+                 "checksum": "ab", "created_at": 1777777777, "download_path": "/api/v4/feeds/proxies/export/%s",
+                 "formats": [{"format": "parquet", "size_bytes": 10, "checksum": "ab"}]}
                 """.formatted(id, id);
     }
 
@@ -49,7 +59,7 @@ class FeedTest {
         "2024-02-29, 2024-02-29"
     })
     void normalizesValidIds(String id, String path) {
-        assertEquals(path, Feed.exportPath(id));
+        assertEquals(path, Exports.exportPath(id, true));
     }
 
     @ParameterizedTest
@@ -68,7 +78,7 @@ class FeedTest {
                 " 2026-05-03"
             })
     void rejectsInvalidIds(String id) {
-        assertThrows(IllegalArgumentException.class, () -> Feed.exportPath(id));
+        assertThrows(IllegalArgumentException.class, () -> Exports.exportPath(id, true));
     }
 
     @Test
@@ -94,10 +104,10 @@ class FeedTest {
                     "anonymizers",
                     "torrents",
                     "ja4t",
-                    "helio/http",
-                    "helio/https",
-                    "helio/dns",
-                    "helio/adb")) {
+                    "helios/http",
+                    "helios/https",
+                    "helios/dns",
+                    "helios/adb")) {
                 expected.add("/api/v4/feeds/" + feed + "/export/latest/meta");
                 expected.add("/api/v4/feeds/" + feed + "/export/2026-05-03/7/meta");
             }
@@ -262,5 +272,173 @@ class FeedTest {
             assertFalse(iterator.hasNext());
             assertEquals(3, server.requests.size());
         }
+    }
+
+    @Test
+    void filtersListsByDayAndVariant() throws Exception {
+        try (TestServer server = new TestServer(exchange -> TestServer.json(exchange, 200, page(null)));
+                SynthientClient client = server.client()) {
+            client.proxies().listExports(2, null, ExportId.daily(LocalDate.of(2026, 5, 3)), ExportVariant.LITE);
+            client.proxies().listExports(2, "c1", null, null);
+            assertEquals(
+                    List.of("limit=2&day=2026-05-03&variant=lite", "cursor=c1&limit=2"),
+                    server.requests.stream().map(TestServer.Request::query).toList());
+        }
+    }
+
+    @Test
+    void sendsTheDayAndVariantOnEveryPage() throws Exception {
+        try (TestServer server = pages(cursor -> cursor.isEmpty() ? page("c1", "a") : page(null, "b"));
+                SynthientClient client = server.client()) {
+            List<String> ids = new ArrayList<>();
+            for (Export export : client.proxies().allExports(1, null, "2026-05-03", ExportVariant.LITE)) {
+                ids.add(export.id());
+            }
+            assertEquals(List.of("a", "b"), ids);
+            assertEquals(
+                    List.of("limit=1&day=2026-05-03&variant=lite", "cursor=c1&limit=1&day=2026-05-03&variant=lite"),
+                    server.requests.stream().map(TestServer.Request::query).toList());
+        }
+    }
+
+    @Test
+    void fetchesTheExportVolume() throws Exception {
+        String body = """
+                {"stream": "proxies", "days": [
+                  {"date": "2026-11-17", "kind": "daily", "snapshots": 1, "row_count": 1528344568,
+                   "size_bytes": 20640294576},
+                  {"date": "2026-11-18", "kind": "hourly", "snapshots": 3, "row_count": 6441725000,
+                   "size_bytes": 880000000}]}
+                """;
+        try (TestServer server = new TestServer(exchange -> TestServer.json(exchange, 200, body));
+                SynthientClient client = server.client()) {
+            ExportVolume volume = client.heliosAdb().exportVolume();
+            client.proxies().exportVolume(7);
+            assertEquals(
+                    "/api/v4/feeds/helios/adb/export/daily",
+                    server.requests.get(0).path());
+            assertEquals("", server.requests.get(0).query());
+            assertEquals(
+                    "/api/v4/feeds/proxies/export/daily", server.requests.get(1).path());
+            assertEquals("days=7", server.requests.get(1).query());
+            assertEquals("proxies", volume.stream());
+            assertEquals(LocalDate.of(2026, 11, 17), volume.days().get(0).date());
+            assertEquals(ExportKind.DAILY, volume.days().get(0).kind());
+            assertEquals(20_640_294_576L, volume.days().get(0).sizeBytes());
+            assertEquals(ExportKind.HOURLY, volume.days().get(1).kind());
+            assertEquals(3, volume.days().get(1).snapshots());
+            assertEquals(6_441_725_000L, volume.days().get(1).rowCount());
+        }
+    }
+
+    @Test
+    void sendsTheVariantForMetadata() throws Exception {
+        try (TestServer server = new TestServer(
+                        exchange -> TestServer.json(exchange, 404, "{\"detail\":\"No snapshot found\"}"));
+                SynthientClient client = server.client()) {
+            ApiException error = assertThrows(
+                    ApiException.class, () -> client.proxies().exportMeta(ExportId.LATEST, ExportVariant.LITE));
+            assertEquals(404, error.statusCode());
+            assertThrows(
+                    ApiException.class, () -> client.anonymizers().exportMeta("2026-05-03/07", ExportVariant.LITE));
+            assertThrows(ApiException.class, () -> client.proxies().exportMeta(ExportId.LATEST));
+            assertEquals(
+                    List.of(
+                            "/api/v4/feeds/proxies/export/latest/meta?variant=lite",
+                            "/api/v4/feeds/anonymizers/export/2026-05-03/7/meta?variant=lite",
+                            "/api/v4/feeds/proxies/export/latest/meta?"),
+                    server.requests.stream()
+                            .map(r -> r.path() + "?" + r.query())
+                            .toList());
+        }
+    }
+
+    @Test
+    void decodesExportFormatsEntitiesAndVariant() {
+        Export lite = Json.decode(
+                export("2026-05-03")
+                        .replace("\"hour\": 7,", "\"variant\": \"lite\",")
+                        .getBytes(UTF_8),
+                Export.class);
+        assertEquals(ExportVariant.LITE, lite.variant());
+        assertNull(lite.entities());
+        assertEquals(ExportFormat.PARQUET, lite.formats().getFirst().format());
+
+        Export whois = Json.decode("""
+                {"id": "2026-11-17", "kind": "daily", "date": "2026-11-17", "size_bytes": 997234948,
+                 "row_count": 6583438, "checksum": "add0", "created_at": 1794960929,
+                 "download_path": "/api/v4/feeds/whois/export/2026-11-17",
+                 "formats": [{"format": "tar.gz", "size_bytes": 997234948, "checksum": "add0"}],
+                 "entities": [{"entity": "asns", "row_count": 123778, "size_bytes": 5442736, "checksum": "062f"},
+                              {"entity": "registrars", "row_count": 1, "size_bytes": 2, "checksum": "ff"}]}
+                """.getBytes(UTF_8), Export.class);
+        assertNull(whois.variant());
+        assertEquals(ExportFormat.TAR_GZ, whois.formats().getFirst().format());
+        assertNotNull(whois.entities());
+        ExportEntity asns = whois.entities().getFirst();
+        assertEquals(WhoisEntity.ASNS, asns.entity());
+        assertEquals(123_778, asns.rowCount());
+        assertNull(asns.schema());
+        assertEquals("registrars", whois.entities().get(1).entity());
+    }
+
+    private static String meta(String format, String schema) {
+        return """
+                {"id": "latest", "stream": "whois", "kind": "daily", "format": "%s", "date": 1794873600,
+                 "rows": 23481094, "size": 997234948, "checksum": "add0", "created_at": 1794960929%s,
+                 "formats": [{"format": "%s", "size_bytes": 997234948, "checksum": "add0"}]}
+                """.formatted(format, schema, format);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"parquet", "csv", "mmdb", "tar.gz", "zip"})
+    void decodesEveryMetaFormat(String format) {
+        ExportMeta meta =
+                Json.decode(meta(format, ",\"schema\":{\"fields\":[]}").getBytes(UTF_8), ExportMeta.class);
+        assertEquals(format, meta.format());
+        assertEquals(format, meta.formats().getFirst().format());
+        assertNull(meta.variant());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {",\"schema\":{\"fields\":[]}", ",\"schema\":{\"fields\":null}", ",\"schema\":{}"})
+    void decodesAnArchiveSchemaAsEmpty(String schema) {
+        String body = meta(ExportFormat.TAR_GZ, schema).replace("\"formats\"", """
+                        "entities": [{"entity": "contacts", "row_count": 6459660, "size_bytes": 205447373,
+                          "checksum": "cf61", "schema": {"fields": [{"name": "emails", "type": "list<string>"}]}}],
+                        "formats\"""");
+        ExportMeta meta = Json.decode(body.getBytes(UTF_8), ExportMeta.class);
+        assertEquals(List.of(), meta.schema().fields());
+        assertNotNull(meta.entities());
+        ExportEntity contacts = meta.entities().getFirst();
+        assertEquals(WhoisEntity.CONTACTS, contacts.entity());
+        assertNotNull(contacts.schema());
+        assertEquals(
+                new ParquetColumn("emails", "list<string>"),
+                contacts.schema().fields().getFirst());
+    }
+
+    @Test
+    void decodesColumnTypesTheSpecDoesNotList() {
+        List<String> types = List.of("double", "int32", "date", "float", "timestamp", "list<string>");
+        StringBuilder fields = new StringBuilder();
+        for (String type : types) {
+            fields.append(fields.isEmpty() ? "" : ",")
+                    .append("{\"name\":\"c\",\"type\":\"")
+                    .append(type)
+                    .append("\"}");
+        }
+        ExportMeta meta = Json.decode(
+                meta(ExportFormat.PARQUET, ",\"schema\":{\"fields\":[" + fields + "]}")
+                        .getBytes(UTF_8),
+                ExportMeta.class);
+        assertEquals(
+                types, meta.schema().fields().stream().map(ParquetColumn::type).toList());
+    }
+
+    @Test
+    void requiresExportFormats() {
+        String body = export("latest").replaceAll("(?s),\\s*\"formats\".*]", "");
+        assertThrows(SynthientException.class, () -> Json.decode(body.getBytes(UTF_8), Export.class));
     }
 }

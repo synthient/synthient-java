@@ -22,8 +22,8 @@ import org.jspecify.annotations.Nullable;
  * }
  * }
  *
- * <p>The server ends a stream after up to 30 minutes, and iteration then ends normally. Events sent
- * between connections are lost, so reconnect in a loop for a continuous feed, pausing only after a failure.
+ * <p>The server can end a stream at any time, such as during a deploy, and iteration then ends normally. Events
+ * sent between connections are lost, so reconnect in a loop for a continuous feed, pausing only after a failure.
  * A lost connection throws {@link ApiConnectionException} and an undecodable event throws {@link
  * SynthientException}; either ends the stream.
  *

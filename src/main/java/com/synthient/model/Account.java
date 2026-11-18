@@ -11,7 +11,8 @@ import org.jspecify.annotations.Nullable;
  *
  * @param scopes the scopes the key grants, each one of {@link Scope}
  * @param lookupQuota the organization's lookup credits
- * @param apiKey the key used for the request, or null when the API omits it
+ * @param apiKey the key used for the request, or null when the API omits it or the key was deleted while the
+ *     request was in flight
  */
 public record Account(
         @JsonProperty("first_name") String firstName,

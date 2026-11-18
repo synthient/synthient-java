@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.sun.net.httpserver.HttpHandler;
+import com.synthient.model.ExportVariant;
 import java.io.InputStream;
 import java.net.URI;
 import java.time.Duration;
@@ -59,6 +60,28 @@ class DownloadTest {
             URI url = client.proxies().downloadUrl(ExportId.LATEST);
             assertEquals(server.origin() + "/storage/x.parquet?X-Amz-Signature=" + SIGNATURE, url.toString());
             assertEquals(1, server.requests.size());
+        }
+    }
+
+    @Test
+    void sendsTheVariantForDownloads() throws Exception {
+        try (TestServer server = server("/storage/x.parquet?X-Amz-Signature=" + SIGNATURE, PARQUET);
+                SynthientClient client = server.client()) {
+            try (InputStream file = client.proxies().download("2026-05-03/07", ExportVariant.LITE)) {
+                assertEquals("PAR1data", new String(file.readAllBytes(), UTF_8));
+            }
+            client.ja4t().downloadUrl("2026-05-03", ExportVariant.LITE);
+            client.proxies().downloadUrl(ExportId.LATEST);
+            List<String> api = server.requests.stream()
+                    .filter(request -> request.path().startsWith("/api/v4/"))
+                    .map(request -> request.path() + "?" + request.query())
+                    .toList();
+            assertEquals(
+                    List.of(
+                            "/api/v4/feeds/proxies/export/2026-05-03/7?variant=lite",
+                            "/api/v4/feeds/ja4t/export/2026-05-03?variant=lite",
+                            "/api/v4/feeds/proxies/export/latest?"),
+                    api);
         }
     }
 
@@ -120,10 +143,10 @@ class DownloadTest {
         HttpUrl fromUrl = HttpUrl.get(from);
         HttpUrl targetUrl = HttpUrl.get(target);
         if (allowed) {
-            assertDoesNotThrow(() -> Feed.checkRedirect(fromUrl, targetUrl));
+            assertDoesNotThrow(() -> Exports.checkRedirect(fromUrl, targetUrl));
         } else {
             SynthientException error =
-                    assertThrows(SynthientException.class, () -> Feed.checkRedirect(fromUrl, targetUrl));
+                    assertThrows(SynthientException.class, () -> Exports.checkRedirect(fromUrl, targetUrl));
             assertFalse(error.getMessage().contains("storage.test"));
         }
     }
@@ -161,6 +184,16 @@ class DownloadTest {
             SynthientException error = assertThrows(
                     SynthientException.class, () -> client.proxies().downloadUrl(ExportId.LATEST));
             assertEquals("expected a redirect to the export, got status 200", error.getMessage());
+        }
+    }
+
+    @Test
+    void aNotModifiedResponseIsNotARedirect() throws Exception {
+        try (TestServer server = new TestServer(exchange -> TestServer.respond(exchange, 304, "", ""));
+                SynthientClient client = server.client()) {
+            SynthientException error = assertThrows(
+                    SynthientException.class, () -> client.proxies().downloadUrl(ExportId.LATEST));
+            assertEquals("expected a redirect to the export, got status 304", error.getMessage());
         }
     }
 

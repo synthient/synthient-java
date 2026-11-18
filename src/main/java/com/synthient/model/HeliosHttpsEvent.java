@@ -17,6 +17,7 @@ import org.jspecify.annotations.Nullable;
  * @param protocol {@code https}
  * @param details the parsed ClientHello, or null when the sensor could not parse it
  * @param raw always null: the HTTPS sensors do not capture handshake bytes
+ * @param transport the tunnel's transport, one of {@link HeliosTransport}
  */
 public record HeliosHttpsEvent(
         @JsonProperty("timestamp") @JsonFormat(without = JsonFormat.Feature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS)
@@ -28,7 +29,8 @@ public record HeliosHttpsEvent(
         @JsonProperty("protocol") String protocol,
         @JsonProperty("meta") HeliosMeta meta,
         @JsonProperty("details") @Nullable TlsClientHello details,
-        @JsonProperty("raw") @Nullable String raw) {
+        @JsonProperty("raw") @Nullable String raw,
+        @JsonProperty("transport") String transport) {
 
     public HeliosHttpsEvent {
         requireNonNull(timestamp, "timestamp");
@@ -36,5 +38,6 @@ public record HeliosHttpsEvent(
         requireNonNull(domain, "domain");
         requireNonNull(protocol, "protocol");
         requireNonNull(meta, "meta");
+        requireNonNull(transport, "transport");
     }
 }

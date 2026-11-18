@@ -27,6 +27,9 @@ public final class Main {
         server.createContext("/api/v4/account/me", exchange -> respond(exchange, 403, "{\"detail\":\"no scope\"}"));
         server.createContext(
                 "/api/v4/feeds/proxies/stream", exchange -> respond(exchange, 200, "{\"ip\":\"10.0.0.1\"}\n\n{\"ip\":\"10.0.0.2\"}\n"));
+        server.createContext(
+                "/api/v4/feeds/geolocation/export/daily",
+                exchange -> respond(exchange, 200, "{\"stream\":\"geolocation\",\"days\":[]}"));
         server.start();
         String baseUrl = "http://127.0.0.1:" + server.getAddress().getPort() + "/api/v4";
 
@@ -44,6 +47,7 @@ public final class Main {
                 events.forEach(event -> ips.add(event.ip()));
             }
             check(ips.equals(List.of("10.0.0.1", "10.0.0.2")), "stream");
+            check(client.geolocation().exportVolume().stream().equals("geolocation"), "dataset");
         } finally {
             server.stop(0);
         }

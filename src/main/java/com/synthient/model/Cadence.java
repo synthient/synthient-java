@@ -1,6 +1,12 @@
 package com.synthient.model;
 
-/** Known values of {@link ActivityStats#cadence()}. The API may add others. */
+/**
+ * Known values of {@link ActivityStats#cadence()}. The API may add others.
+ *
+ * @deprecated Domain lookup was removed from the Synthient API and will stop working when the endpoint is turned
+ *     off. It will be removed in the next major version.
+ */
+@Deprecated
 public final class Cadence {
     public static final String NO_ACTIVITY = "No activity in the last 30 days.";
     public static final String EVEN = "Activity is evenly distributed across the day.";

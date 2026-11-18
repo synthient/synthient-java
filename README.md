@@ -13,7 +13,7 @@
 
 # synthient-java
 
-`synthient-java` is the official Java SDK for the [Synthient API](https://docs.synthient.com): IP and domain intelligence, account details, and real-time and bulk data feeds.
+`synthient-java` is the official Java SDK for the [Synthient API](https://docs.synthient.com): IP intelligence, account details, and real-time and bulk data feeds.
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.synthient/synthient-java)](https://central.sonatype.com/artifact/com.synthient/synthient-java)
 [![test](https://github.com/synthient/synthient-java/actions/workflows/test.yml/badge.svg)](https://github.com/synthient/synthient-java/actions/workflows/test.yml)
@@ -90,7 +90,7 @@ Java 21 or later. The SDK depends on OkHttp 5, Jackson 3, and the JSpecify annot
 
 ## API Keys
 
-Every request needs a Synthient API key. Keys are issued from the Synthient dashboard; if you don't have one, [contact us](mailto:contact@synthient.com). A key's scopes decide what it can call: `BASIC` covers the lookups and `account()`, and each feed has its own scopes, listed under [Feeds](#feeds).
+Every request needs a Synthient API key. Keys are issued from the Synthient dashboard; if you don't have one, [contact us](mailto:contact@synthient.com). A key's scopes decide what it can call: `BASIC` covers the lookups and `account()`, and each feed and dataset has its own scopes, listed under [Feeds](#feeds) and [Datasets](#datasets).
 
 If a request fails even though you are sending a key:
 
@@ -144,7 +144,7 @@ public class LookupIp {
 
 ### Look up many IP addresses
 
-Look up as many as 1000 addresses in one request for `ceil(n * 0.9)` credits. Private and reserved addresses are skipped and duplicates are merged, so match results by `ip()`.
+Look up a batch of addresses in one request for `ceil(n * 0.9)` credits. The batch cap depends on your plan: 100 on Free, 500 on Starter, and 1000 on Premium and Enterprise, and the API rejects a larger batch with a 422. Private and reserved addresses are skipped and duplicates are merged, so match results by `ip()`.
 
 ```java
 List<IpInfo> results = client.lookupIps(List.of("8.8.8.8", "1.1.1.1"));
@@ -153,18 +153,6 @@ for (IpInfo result : results) {
     if (intelligence != null) {
         System.out.println(result.ip() + " " + intelligence.riskScore());
     }
-}
-```
-
-### Look up a domain
-
-Get the honeypot traffic observed for a domain and its most recent events. Each lookup costs one credit.
-
-```java
-DomainInfo domain = client.lookupDomain("example.com", 10);
-System.out.println(domain.status() + " " + domain.stats().events24h());
-for (DomainEvent event : domain.recentEvents()) {
-    System.out.println(event.timestamp() + " " + event.targetSubdomain() + " " + event.port());
 }
 ```
 
@@ -185,8 +173,7 @@ System.out.println(account.organization().name() + " " + account.scopes() + " " 
 ### [SynthientClient](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/SynthientClient.html)
 
 - [`lookupIp`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/SynthientClient.html#lookupIp(java.lang.String)) - Look up an IPv4 or IPv6 address
-- [`lookupIps`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/SynthientClient.html#lookupIps(java.util.Collection)) - Look up as many as 1000 addresses in one request
-- [`lookupDomain`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/SynthientClient.html#lookupDomain(java.lang.String,int)) - Look up the honeypot traffic observed for a domain
+- [`lookupIps`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/SynthientClient.html#lookupIps(java.util.Collection)) - Look up a batch of addresses in one request
 - [`account`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/SynthientClient.html#account()) - Get the key's account, scopes, and remaining lookup credits
 - [`health`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/SynthientClient.html#health()) - Check that the API and its dependencies are healthy
 
@@ -197,6 +184,7 @@ Each feed comes from a method of the client, such as `client.proxies()`, and has
 - [`stream`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/Feed.html#stream()) - Connect to the feed's real-time events
 - [`listExports`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/Feed.html#listExports(int,java.lang.String)) - List one page of the feed's Parquet exports, newest first
 - [`allExports`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/Feed.html#allExports()) - Iterate over every export, fetching pages as needed
+- [`exportVolume`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/Feed.html#exportVolume(int)) - Get the rows and bytes the feed exported per UTC day
 - [`exportMeta`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/Feed.html#exportMeta(java.lang.String)) - Get an export's checksum, size, row count, and Parquet schema
 - [`download`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/Feed.html#download(java.lang.String)) - Download an export's Parquet file
 - [`downloadUrl`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/Feed.html#downloadUrl(java.lang.String)) - Get a presigned URL for an export's Parquet file, valid for 24 hours
@@ -206,11 +194,26 @@ Each feed comes from a method of the client, such as `client.proxies()`, and has
 | `proxies()`     | Residential, mobile, and datacenter proxies   | `ProxyEvent`       | `PROXY_FIREHOSE`        | `PROXY_FEEDS`         |
 | `anonymizers()` | VPN and anonymizer IP ranges                  | `AnonymizerEvent`  | `ANONYMIZERS_STREAM`    | `ANONYMIZERS_FEED`    |
 | `torrents()`    | BitTorrent DHT and tracker peers              | `TorrentEvent`     | `TORRENTS_STREAM`       | `TORRENTS_FEED`       |
-| `ja4t()`        | JA4T TCP fingerprints                         | `Ja4tEvent`        | `JA4T_STREAM`           | `JA4T_FEED`           |
 | `heliosHttp()`  | Helios honeypot HTTP requests                 | `HeliosHttpEvent`  | `HONEYPOT_HTTP_STREAM`  | `HONEYPOT_HTTP_FEED`  |
 | `heliosHttps()` | Helios honeypot TLS ClientHellos              | `HeliosHttpsEvent` | `HONEYPOT_HTTPS_STREAM` | `HONEYPOT_HTTPS_FEED` |
 | `heliosDns()`   | Helios honeypot tunnel destinations           | `HeliosDnsEvent`   | `HONEYPOT_DNS_STREAM`   | `HONEYPOT_DNS_FEED`   |
 | `heliosAdb()`   | Helios honeypot Android Debug Bridge commands | `HeliosAdbEvent`   | `HONEYPOT_ADB_STREAM`   | `HONEYPOT_ADB_FEED`   |
+
+### [Datasets](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/Dataset.html)
+
+Datasets have one export per UTC day and no stream. Each dataset comes from a method of the client, such as `client.geolocation()`, and has the same methods:
+
+- [`listExports`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/Dataset.html#listExports(int,java.lang.String,java.lang.String)) - List one page of the dataset's daily exports, newest first
+- [`allExports`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/Dataset.html#allExports()) - Iterate over every export, fetching pages as needed
+- [`exportVolume`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/Dataset.html#exportVolume(int)) - Get the rows and bytes the dataset exported per UTC day
+- [`exportMeta`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/Dataset.html#exportMeta(java.lang.String,java.lang.String)) - Get a file's checksum, size, and row count, and list every file of the day
+- [`download`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/Dataset.html#download(java.lang.String,java.lang.String)) - Download a day's file in the format you choose
+- [`downloadUrl`](https://javadoc.io/doc/com.synthient/synthient-java/latest/com/synthient/Dataset.html#downloadUrl(java.lang.String,java.lang.String)) - Get a presigned URL for a day's file, valid for 24 hours
+
+| Method          | Data                                    | Scope              | Formats                                   |
+| --------------- | --------------------------------------- | ------------------ | ----------------------------------------- |
+| `geolocation()` | IP geolocation, network, and risk data  | `GEOLOCATION_FEED` | `parquet` (default), `csv` (gzip), `mmdb` |
+| `whois()`       | WHOIS registry records as Parquet files | `WHOIS_FEED`       | `tar.gz`                                  |
 
 </details>
 
@@ -235,7 +238,7 @@ while (true) {
 }
 ```
 
-- The server closes each stream after up to 30 minutes. That ends the inner loop without an exception, and the outer loop reconnects at once.
+- The server can close a stream at any time, such as during a deploy. That ends the inner loop without an exception, and the outer loop reconnects at once.
 - A 401 or 403 stops the loop, because reconnecting can't fix a rejected key or a missing scope.
 - Any other failure ends the stream, and the loop waits 2 seconds before reconnecting.
 - Events sent while disconnected are missed. The API has no resume cursor.
@@ -259,11 +262,20 @@ for (Export export : client.proxies().allExports()) {
 }
 ```
 
+Pass `day` to list only one UTC day's exports:
+
+```java
+String day = ExportId.daily(LocalDate.of(2026, 11, 17));
+for (Export export : client.proxies().allExports(100, null, day, null)) {
+    System.out.println(export.id() + " " + export.rowCount());
+}
+```
+
 On the first page, the newest hourly export has the ID `latest`, a moving alias for the freshest export. Its `date()` and `hour()` give its stable ID, such as `2026-10-14/21`.
 
 ## Downloads
 
-Exports are Parquet files. `download` returns a file's contents as an `InputStream`, which you must close:
+Feed exports are Parquet files. `download` returns a file's contents as an `InputStream`, which you must close:
 
 ```java
 try (InputStream body = client.proxies().download(ExportId.LATEST)) {
@@ -271,10 +283,20 @@ try (InputStream body = client.proxies().download(ExportId.LATEST)) {
 }
 ```
 
-- Name an export by its `id()` from a listing, by `ExportId.LATEST`, or by `ExportId.daily(date)` or `ExportId.hourly(date, hour)` for a UTC day or hour.
+Datasets offer more formats. This downloads the newest geolocation database as a MaxMind DB:
+
+```java
+try (InputStream body = client.geolocation().download(ExportId.LATEST, ExportFormat.MMDB)) {
+    Files.copy(body, Path.of("geolocation.mmdb"), StandardCopyOption.REPLACE_EXISTING);
+}
+```
+
+- Name an export by its `id()` from a listing, by `ExportId.LATEST`, or by `ExportId.daily(date)` or `ExportId.hourly(date, hour)` for a UTC day or hour. Datasets have no hourly exports.
 - `exportMeta` returns the file's SHA-256 checksum. Use a fixed ID for both calls, because `latest` can move between them.
 - `downloadUrl` returns a presigned URL that works without a key for 24 hours, so treat it as a secret. Your API key is never sent to the storage host.
 - Hourly exports roll into the daily export shortly after 00:30 UTC the next day. After that, the hour returns a 400.
+- `proxies()` and `anonymizers()` also publish lite exports, deduplicated to the latest row per address or range and provider. Pass `ExportVariant.LITE` as the `variant` to `listExports` to list them. A lite export has the same ID as the full one, so pass the variant again to `exportMeta`, `downloadUrl`, and `download`.
+- Files come back exactly as served: a `csv` download is a `.csv.gz` file, and a WHOIS download is a `.tar.gz` archive of Parquet files.
 
 ## Retries
 
@@ -363,7 +385,7 @@ Every exception the SDK throws is unchecked. Reading a download's `InputStream` 
 | 402    | The team is out of lookup credits                                                                 |
 | 403    | The key lacks the scope for the endpoint or feed                                                  |
 | 404    | The export doesn't exist, or a daily export is still rolling up (`retryAfter()` is set)           |
-| 422    | The input is invalid, such as a private address or a malformed domain                             |
+| 422    | The input is invalid, such as a private address                                                   |
 | 429    | Rate limited if `retryAfter()` is set; otherwise the budget is spent or too many streams are open |
 | 5xx    | The server failed                                                                                 |
 
@@ -438,7 +460,7 @@ try {
 }
 ```
 
-`schema.descriptorSet()` is a protobuf `FileDescriptorSet`. `GrpcSchema.explain` describes common gRPC errors in plain language.
+Server reflection requires your API key. Without one, the server answers `UNAUTHENTICATED`, which `GrpcSchema.explain` reports as a missing or invalid key. `schema.descriptorSet()` is a protobuf `FileDescriptorSet`, and `GrpcSchema.explain` describes other common gRPC errors in plain language.
 
 # Development
 

