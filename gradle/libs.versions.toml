@@ -13,6 +13,7 @@ protobuf = "3.25.9"
 [libraries]
 errorprone-core = { module = "com.google.errorprone:error_prone_core", version.ref = "errorprone" }
 errorprone-gradle-plugin = { module = "net.ltgt.gradle:gradle-errorprone-plugin", version = "5.1.1" }
+guava = { module = "com.google.guava:guava", version = "33.8.0-jre" }
 grpc-api = { module = "io.grpc:grpc-api", version.ref = "grpc" }
 grpc-netty-shaded = { module = "io.grpc:grpc-netty-shaded", version.ref = "grpc" }
 grpc-services = { module = "io.grpc:grpc-services", version.ref = "grpc" }

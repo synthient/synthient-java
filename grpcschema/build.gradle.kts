@@ -11,6 +11,11 @@ dependencies {
     implementation(libs.grpc.services)
     implementation(libs.grpc.stub)
     runtimeOnly(libs.grpc.netty.shaded)
+    constraints {
+        implementation(libs.guava) {
+            because("gRPC still depends on Guava 33.6.0, which has GHSA-xxph-c9ww-hj94")
+        }
+    }
 }
 
 publishing {
