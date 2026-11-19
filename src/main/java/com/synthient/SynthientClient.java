@@ -47,7 +47,7 @@ import tools.jackson.databind.JsonNode;
  */
 public final class SynthientClient implements AutoCloseable {
     /** The SDK version, sent in the {@code User-Agent} header. */
-    public static final String VERSION = "1.0.0";
+    public static final String VERSION = "1.1.0";
 
     public static final String DEFAULT_BASE_URL = "https://api.synthient.com/api/v4";
 

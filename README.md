@@ -52,9 +52,9 @@ Add `com.synthient:synthient-java` to your build. The [gRPC schema fetcher](#grp
 
 ```kotlin
 dependencies {
-    implementation("com.synthient:synthient-java:1.0.0")
+    implementation("com.synthient:synthient-java:1.1.0")
     // Only for the gRPC schema fetcher:
-    implementation("com.synthient:synthient-java-grpcschema:1.0.0")
+    implementation("com.synthient:synthient-java-grpcschema:1.1.0")
 }
 ```
 
@@ -62,9 +62,9 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'com.synthient:synthient-java:1.0.0'
+    implementation 'com.synthient:synthient-java:1.1.0'
     // Only for the gRPC schema fetcher:
-    implementation 'com.synthient:synthient-java-grpcschema:1.0.0'
+    implementation 'com.synthient:synthient-java-grpcschema:1.1.0'
 }
 ```
 
@@ -74,13 +74,13 @@ dependencies {
 <dependency>
   <groupId>com.synthient</groupId>
   <artifactId>synthient-java</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
 </dependency>
 <!-- Only for the gRPC schema fetcher: -->
 <dependency>
   <groupId>com.synthient</groupId>
   <artifactId>synthient-java-grpcschema</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
 </dependency>
 ```
 

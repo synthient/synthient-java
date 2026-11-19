@@ -24,12 +24,12 @@
     <dependency>
       <groupId>com.synthient</groupId>
       <artifactId>synthient-java</artifactId>
-      <version>1.0.0</version>
+      <version>1.1.0</version>
     </dependency>
     <dependency>
       <groupId>com.synthient</groupId>
       <artifactId>synthient-java-grpcschema</artifactId>
-      <version>1.0.0</version>
+      <version>1.1.0</version>
     </dependency>
   </dependencies>
 

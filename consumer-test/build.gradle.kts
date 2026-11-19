@@ -9,8 +9,8 @@ java {
 }
 
 dependencies {
-    implementation("com.synthient:synthient-java:1.0.0")
-    implementation("com.synthient:synthient-java-grpcschema:1.0.0")
+    implementation("com.synthient:synthient-java:1.1.0")
+    implementation("com.synthient:synthient-java-grpcschema:1.1.0")
 }
 
 tasks.withType<JavaCompile>().configureEach {
